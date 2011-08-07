@@ -336,6 +336,24 @@ function pfund_edit() {
 }
 
 /**
+ * Shortcode handler for pfund-giver-tally.  Returns the number of unique givers
+ * for the current campaign.
+ * @return string the number of unique givers.
+ */
+function pfund_giver_tally() {
+	global $post;
+	if( $post->ID == null || $post->post_type != 'pfund_campaign' ) {
+		return '';
+	} else {
+		$tally = get_post_meta( $post->ID, '_pfund_giver-tally', true );
+		if ( $tally == '' ) {
+			$tally = '0';
+		}
+		return $tally;
+	}
+}
+
+/**
  * Handler for actions performed on a cause.
  * @param mixed $posts The current posts provided by the_posts filter.
  * @return mixed $posts The current posts provided by the_posts filter.
@@ -501,7 +519,7 @@ function pfund_send_donate_email( $transaction_array, $post ) {
 	$campaignUrl = get_permalink( $post );
 	if ( apply_filters ('pfund_mail_on_donate', true, $transaction_array ) ) {
 		$options = get_option( 'pfund_options' );
-		if ( $options['mailchimp'] == 'true' ) {
+		if ( $options['mailchimp'] ) {
 			$merge_vars = array(
 				'FNAME' => $author_data->first_name,
 				'LNAME' => $author_data->last_name,
@@ -567,7 +585,7 @@ function pfund_send_goal_reached_email( $transaction_array, $post, $goal ) {
 	$campaignUrl = get_permalink( $post );
 	if ( apply_filters ('pfund_mail_on_goal_reached', true, $transaction_array ) ) {
 		$options = get_option( 'pfund_options' );
-		if ( $options['mailchimp'] == 'true' ) {
+		if ( $options['mailchimp'] ) {
 			$merge_vars = array(
 				'FNAME' => $author_data->first_name,
 				'LNAME' => $author_data->last_name,
@@ -598,6 +616,7 @@ function pfund_setup_shortcodes() {
 	add_shortcode( 'pfund-comments', 'pfund_comments' );
 	add_shortcode( 'pfund-donate', 'pfund_donate_button' );
 	add_shortcode( 'pfund-edit', 'pfund_edit' );
+	add_shortcode( 'pfund-giver-tally', 'pfund_giver_tally' );
 	add_shortcode( 'pfund-progress-bar', 'pfund_progress_bar' );
 	$options = get_option( 'pfund_options' );
 	if ( array_key_exists( 'fields',  $options ) ) {
@@ -870,6 +889,7 @@ function _pfund_process_donate( $post ){
 		add_post_meta( $post->ID, '_pfund_transaction_ids', $transaction_nonce );
 		$transaction_array['transaction_nonce'] = $transaction_nonce;
 		add_post_meta( $post->ID, '_pfund_transactions', $transaction_array );
+		_pfund_update_giver_tally( $post->ID );
 
 		$options = get_option( 'pfund_options' );
 		//Add comment for transaction.
@@ -1062,5 +1082,26 @@ function _pfund_save_camp( $post, $update_type = 'add' ) {
 	$pfund_update_message .= '<div>'.$update_content.'</div></div>';
 	$pfund_update_message .= $additional_content;
 
+}
+
+/**
+ * Update the total number of unique givers for this campaign.  A giver is
+ * considered unique by email address.  All anonymous gifts are considered
+ * unique givers.
+ * @param <type> $campaign_id
+ */
+function _pfund_update_giver_tally( $campaign_id ) {
+	$giver_emails = array();
+	$giver_tally = 0;
+	$transactions = get_post_meta( $campaign_id, '_pfund_transactions' );
+	foreach ( $transactions as $transaction ) {
+		if ( $transaction['anonymous'] ) {
+			$giver_tally++;
+		} else if ( ! in_array( $transaction_array['donor_email'], $giver_emails ) ) {
+			$giver_tally++;
+			$giver_emails[] = $transaction_array['donor_email'];
+		}
+	}
+	update_post_meta( $campaign_id, '_pfund_giver-tally', $giver_tally );
 }
 ?>

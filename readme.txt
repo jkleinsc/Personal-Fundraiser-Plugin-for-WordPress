@@ -28,7 +28,7 @@ All donations for this plugin go to provide life-changing surgery for children i
 
 = Why should I use this plugin? =
 
-charity: water has raised over $9.3M using personal fundraising campaigns.  
+charity: water has raised over $9.8M using personal fundraising campaigns.  
 This plugin adds the capability of creating personal fundraising campaigns on your WordPress site. 
 
 = What is a Cause? =
@@ -47,18 +47,70 @@ When creating or editing a cause, here are several things to keep in mind:
 
 Each of the fields defined in the Personal Fundraiser Fields section of the Personal Fundraiser settings has a corresponding shortcode.  In addition, the plugin provides the following shortcodes:
 
-* **[pfund-campaign-list]** Display the list of campaigns
-* **[pfund-cause-list]** Display the list of causes
+* **[pfund-campaign-list]** Display the list of campaigns.
+* **[pfund-cause-list]** Display the list of causes.
 * **[pfund-comments]** Display the comments/donations for the campaign.
 * **[pfund-donate]** PayPal donate button.  This shortcode is required in order to accept donations for the campaigns.
-* **[pfund-edit]** Required shortcode to display edit button
-* **[pfund-camp-title]** The title of the campaign
-* **[pfund-gift-goal]** The amount that the user hopes to raise for their campaign
-* **[pfund-gift-tally]** The total amount raised
+* **[pfund-edit]** Required shortcode to display edit button.
+* **[pfund-camp-title]** The title of the campaign.
+* **[pfund-gift-goal]** The amount that the user hopes to raise for their campaign.
+* **[pfund-gift-tally]** The total amount raised.
+* **[pfund-giver-tally]** The total number of unique donors to the campaign.
+
+= What do the various settings do? =
+* **Campaign Slug** URL prefix for campaigns.  Also the location of the page containing the list of causes.
+* **Cause Slug** URL prefix for causes.  Also the location of the page containing the list of campaigns.
+* **Currency Symbol** Currency symbol to display next to monetary amounts such as amount of donations received.
+* **Login Required To Create**  If checked, users must be logged in before they can create campaigns.  If it is not checked, users may create campaigns anonymously, but those campaigns stay in draft status until the user logs in.  Once the user logs in the campaign is assigned to that user.
+* **Allow Users To Register**  If users are not logged in, allow them to register using the custom registration the personal fundraiser plugin provides.
+* **Campaigns Require Approval**  If checked, campaigns for logged in users are saved as Pending Review until an admininstrator can approve them.  Campaigns pending review are only visible to the creator of the campaign as well as admins.  If this checkbox is not checked, campaigns will be publicly visible as soon as a logged in user saves them.
+* **User Roles that can submit campaigns** Determines what user roles can create campaigns.  This setting only affects anonymous campaigns after a user logs in.  If a campaign is created anonymously, but the logged in user doesn't have rights to submit a campaign, the campaign will stay in a draft status indefintely.
+* **PayPal Options** See below
+* **MailChimp Options** This plugin provides the ability to send transactional emails through MailChimp.  The transactional emails must be created using MailChimp's <a href="http://apidocs.mailchimp.com/api/">API</a>.
+* **MailChimp API key** MailChimp API key needed to send emails via MailChimp.  This API key can be obtained by going to: <a href="http://admin.mailchimp.com/account/api-key-popup">API Key</a>.
+* **Campaign Approval Email ID**  The MailChimp campaign id of the transactional campaign to use to send campaign approved emails.  The following merge fields are passed:
+    * **FNAME** The first name of the user who created the campaign.  
+    * **LNAME**  The last name of the user who created the campaign.
+    * **CAMP_TITLE** The title of the campaign.
+    * **CAMP_URL** The URL for the campaign.
+* **Campaign Donation Email ID** The MailChimp campaign id of the transactional campaign to use to send campaign donation emails.  The following merge fields are passed:
+    * **FNAME** The first name of the user who created the campaign.  
+    * **LNAME**  The last name of the user who created the campaign.
+    * **CAMP_TITLE** The title of the campaign.
+    * **CAMP_URL** The URL for the campaign.
+    * **DONATE_AMT** The amount donated.
+* **Goal Reached Email ID** The MailChimp campaign id of the transactional campaign to use to send an email when the campaign goal is reached.  The following merge fields are passed:
+    * **FNAME** The first name of the user who created the campaign.  
+    * **LNAME**  The last name of the user who created the campaign.
+    * **CAMP_TITLE** The title of the campaign.
+    * **CAMP_URL** The URL for the campaign.
+    * **GOAL_AMT** The goal that was reached.
+
+* **Personal Fundraiser Fields** Defines the fields that are available for use for personal fundraisers.  Each field has the following settings:
+    * **Label** The text to display to identify this field on the campaign creation/edit screen.
+    * **Description** A longer text description of the field that will be displayed on the campaign creation/edit screen.
+    * **Type** Defines the type of field.  The following types are available:
+        * **Date Selector** Displays a date picker to the user.
+        * **Campaign Title** The field used to contain the campaign title.  This field is required and the type cannot be changed. 
+        * **Campaign URL slug ** The field used to contain the campaign url suffix.  This field is required and the type cannot be changed.
+        * **Large Text Input (textarea) ** Provides a large textbox for users to provide text.
+        * **Image** Provides an image upload.
+        * **Select Dropdown** Displays a dropdown for users to select a value.
+        * **Text Input** Simple text input field.
+        * **Fixed Input** Intended for future development.  Generally the idea of this field is pass along fixed data when a donation is processed.  Useful if you need additional fields to categorize donations.
+        * **User Email** Email field that will default to the user's email but can be overriden with any valid email address.
+        * **User Display Name** Text input field that defaults to the user's display name but can be overriden with any value.
+        * **User Goal** The field used to contain the campaign goal.  This field is required and the type cannot be changed.
+   * **Data** Currently only used by Select Dropdown fields, this field defines the valid values for the drop down.  Each value for the drop down should be separated by a new line.
+   * **Required** If this checkbox is checked, this field is required in order to create or update the campaign.
+   * **Shortcode**  The shortcode to use to display this field on the campaign.
+   * **Actions** Actions that can be taken on the field:
+        * Delete the field.  Note that the field will not actually be deleted until you click on the "Save Changes" button.
+        * Move Up/Move Down Change the display order of the field on the campaign creation/edit screen.
 
 = How do I use PayPal? =
-
-Using PayPal requires two settings on the Personal Fundraising settings screen.  These values can be obtained by logging into PayPal:
+ 
+Using PayPal requires a Premier or Business PayPal account.  Also there two fields on the Personal Fundraising settings screen that must be set.  These values can be obtained by logging into PayPal:
 
 **Donate Button Code**
 
@@ -71,6 +123,8 @@ Using PayPal requires two settings on the Personal Fundraising settings screen. 
 1. Click on Create Button.
 1. Copy all of the HTML code from the Website tab and paste it in the *Donate Button Code* field.
 
+PayPal has more information on using a donate button here: <a href="https://www.paypal.com/us/cgi-bin/?cmd=_donate-intro-outside">PayPal Donate Button</a>.
+
 **Payment Data Transfer Token**
 
 1. Click My Account tab.
@@ -80,10 +134,17 @@ Using PayPal requires two settings on the Personal Fundraising settings screen. 
 1. For Return URL, specify your site's URL. The plugin will override this value to return to the campaign once a donation is processed.
 1. Under the Payment Data Transfer (optional) section, make sure that Payment Data Transfer is On.  If it is already on, copy the Identity Token value and paste it into the *Payment Data Transfer Token* field.  If it is not on, turn it on, click on Save at the bottom of the page and then click Website Payment Preferences in the Seller Preferences column to display the screen again with the  Identity Token value.
 
-
+**Use PayPal Sandbox**
+If you are using PayPal's developer sandbox for testing, check this checkbox; otherwise leave it unchecked.
 == Screenshots ==
 
 == Changelog ==
+
+= 0.7.1 =
+
+* Fixed Use MailChimp option not properly updating.
+* Fixed PayPal to not always use PayPal sandbox (now configurable).
+* Added pfund-giver-tally shortcode.
 
 = 0.7 =
 

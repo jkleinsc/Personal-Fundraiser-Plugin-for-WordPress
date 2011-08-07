@@ -149,7 +149,8 @@ function pfund_pre_update_options( $new_options ) {
 		$new_options['fields'][$idx] = $field;		
 	}
 
-	$checkboxes = array( 'login_required', 'allow_registration', 'approval_required' );
+	$checkboxes = array( 'allow_registration', 'approval_required',
+		'login_required',  'mailchimp', 'paypal_sandbox' );
 	foreach ( $checkboxes as $field_name) {
 		if ( $new_options[$field_name] == 'true' ) {
 			$new_options[$field_name] = true;

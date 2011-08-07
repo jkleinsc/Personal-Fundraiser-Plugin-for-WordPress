@@ -15,6 +15,9 @@
     Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
+define( 'PFUND_PAYPAL_PROD_URL', 'https://www.paypal.com/cgi-bin/webscr' );
+define( 'PFUND_PAYPAL_SANDBOX_URL', 'https://www.sandbox.paypal.com/cgi-bin/webscr' );
+
 /**
  * Process a PayPal transaction using PayPal's Payment Data Transfer method.
  * @return array with the following keys:
@@ -36,7 +39,6 @@ function pfund_process_paypal_pdt() {
 	$return_array = array( 'success' => false );
 	try {
 		$options = get_option( 'pfund_options' );
-
 		$auth_token = $options['paypal_pdt_token'];
 		$tx_token = $_GET['tx'];
 		$request_body = array(
@@ -44,12 +46,7 @@ function pfund_process_paypal_pdt() {
 			'tx' => $tx_token,
 			'at' => $auth_token,
 		);
-
-		$response = wp_remote_post( 'https://www.sandbox.paypal.com/cgi-bin/webscr',
-				array( 'body' => $request_body, 'timeout' => 10 )
-		);
-		//https://www.paypal.com
-
+		$response = _pfund_call_paypal( $request_body, $options['paypal_sandbox'] );
 		if ( ! is_wp_error( $response ) && ! empty( $response['body'] ) ) {
 			$lines = explode( "\n", $response['body'] );
 			$keyarray = array();
@@ -97,9 +94,7 @@ function pfund_process_paypal_ipn() {
 	try {
 		$request_body = $_POST;
 		$request_body['cmd'] = '_notify-validate';
-		$response = wp_remote_post( 'https://www.sandbox.paypal.com/cgi-bin/webscr',
-				array( 'body' => $request_body, 'timeout' => 10 )
-		);
+		$response = _pfund_call_paypal( $request_body, $options['paypal_sandbox'] );
 		if ( ! is_wp_error( $response ) && ! empty( $response['body'] ) ) {
 			if ( strcmp( $response['body'], "VERIFIED") == 0 ) {
 				$return_array['success'] = true;
@@ -134,6 +129,26 @@ function _pfund_map_paypal_fields( $paypal_response, $return_array ) {
 	if ( strpos( $paypal_response['custom'], 'anon' ) === 0) {
 		$return_array['anonymous'] = true;
 	}
+}
+
+/**
+ * Call PayPal with the specified request, using the proper url depending
+ * upon whether or not the request should use the PayPal developer sandbox.
+ * @param array $request_body The request to send to PayPal.
+ * @param boolean $use_sandbox If true, use the PayPal developer sandbox;
+ * otherwise call PayPal production.
+ * @return mixed response of PayPal call.
+ */
+function _pfund_call_paypal( $request_body, $use_sandbox ) {
+	if ( $use_sandbox ) {
+		$paypal_url = PFUND_PAYPAL_SANDBOX_URL;
+	} else {
+		$paypal_url = PFUND_PAYPAL_PROD_URL;
+	}
+	$response = wp_remote_post( $paypal_url,
+		array( 'body' => $request_body, 'timeout' => 10 )
+	);
+	return $response;
 }
 
 /**

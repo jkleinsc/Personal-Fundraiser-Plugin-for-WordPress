@@ -145,6 +145,19 @@ function pfund_admin_init() {
 			'value' => $options['paypal_pdt_token']
 		)
 	);
+	add_settings_field(
+		'pfund_paypal_sandbox',
+		__( 'Use PayPal Sandbox', 'pfund' ),
+		'pfund_option_text_field',
+		'pfund',
+		'pfund_paypal_options',
+		array(
+			'name' => 'paypal_sandbox',
+			'type' => 'checkbox',
+			'value' => $options['paypal_sandbox']
+		)
+	);
+
 	add_settings_section(
 		'pfund_mailchimp_options',
 		__( 'MailChimp Options', 'pfund' ),
@@ -365,7 +378,7 @@ function pfund_handle_publish( $post_id, $post ) {
 	$campaignUrl = get_permalink( $post );
 	if ( apply_filters ('pfund_mail_on_publish', true, $post, $author_data, $campaignUrl ) ) {
 		$options = get_option( 'pfund_options' );
-		if ( $options['mailchimp'] == 'true' ) {
+		if ( $options['mailchimp'] ) {
 			$merge_vars = array(
 				'FNAME'=> $author_data->first_name,
 				'LNAME'=> $author_data->last_name,
