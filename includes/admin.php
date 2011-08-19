@@ -64,6 +64,17 @@ function pfund_admin_init() {
 			'value' => $options['currency_symbol']
 		)
 	);
+	add_settings_field(
+		'pfund_date_format',
+		__( 'Date Format', 'pfund' ),
+		'pfund_option_text_field',
+		'pfund',
+		'pfund_main_options',
+		array(
+			'name' => 'date_format',
+			'value' => pfund_get_value($options, 'date_format', 'm/d/y' )
+		)
+	);
 	add_settings_section(
 		'pfund_permission_options',
 		__( 'Campaign Creation Options', 'pfund' ),
@@ -145,6 +156,7 @@ function pfund_admin_init() {
 			'value' => $options['paypal_pdt_token']
 		)
 	);
+	$paypal_sandbox = pfund_get_value( $options , 'paypal_sandbox',  false );
 	add_settings_field(
 		'pfund_paypal_sandbox',
 		__( 'Use PayPal Sandbox', 'pfund' ),
@@ -154,7 +166,7 @@ function pfund_admin_init() {
 		array(
 			'name' => 'paypal_sandbox',
 			'type' => 'checkbox',
-			'value' => $options['paypal_sandbox']
+			'value' => $paypal_sandbox
 		)
 	);
 
@@ -164,6 +176,7 @@ function pfund_admin_init() {
 		'pfund_mailchimp_section_text',
 		'pfund'
 	);
+	$use_mailchimp = pfund_get_value( $options, 'mailchimp', false );
 	add_settings_field(
 		'pfund_use_mailchimp',
 		__( 'Use MailChimp to send emails', 'pfund' ),
@@ -173,7 +186,7 @@ function pfund_admin_init() {
 		array(
 			'name' => 'mailchimp',
 			'type' => 'checkbox',
-			'value' => $options['mailchimp']
+			'value' => $use_mailchimp
 		)
 	);
 	add_settings_field(
@@ -309,7 +322,9 @@ function pfund_campaign_posts_custom_column( $column_name, $campaign_id ) {
 		case 'user':
 			global $post;
 			$author = get_userdata( $post->post_author );
-			echo $author->display_name;
+			if ( $author ) {
+				echo strip_tags( $author->display_name );
+			}
 			break;
 	}
 }
@@ -331,18 +346,20 @@ function pfund_campaign_sortable_columns( $columns ) {
  */
 function pfund_cause_meta( $post ) {
 	$metavalues = get_post_custom( $post->ID );
-	
+	$cause_description = pfund_get_value( $metavalues,
+			'_pfund_cause_description', array('') );
 ?>
 	<ul>
 		<li>
 			<label for="pfund-cause-description"><?php _e( 'Cause Description', 'pfund' );?></label>
-			<textarea class="pfund-textarea" id="pfund-cause-description" name="pfund-cause-description" rows="10" cols="50"><?php echo $metavalues['_pfund_cause_description'][0];?></textarea>
+			<textarea class="pfund-textarea" id="pfund-cause-description" name="pfund-cause-description" rows="10" cols="50"><?php echo $cause_description[0];?></textarea>
 		</li>
 <?php
+		$cause_image = pfund_get_value( $metavalues, '_pfund_cause_image', array('') );
 		echo _pfund_render_image_field( array(
 			'name' => 'pfund-cause-image',
 			'label' =>__( 'Cause Image', 'pfund' ),
-			'value' => $metavalues['_pfund_cause_image'][0]
+			'value' => $cause_image[0]
 		) );
 ?>
 	</ul>
@@ -429,12 +446,7 @@ function pfund_option_text_area( $config ) {
 function pfund_option_text_field( $config ) {
 	$value = $config['value'];
 	$name = $config['name'];
-	if ( array_key_exists( 'type', $config ) ) {
-		$type = $config['type'];
-	} else {
-		$type = 'text';
-	}
-
+	$type = pfund_get_value( $config, 'type', 'text' );
 	if ( $type == 'checkbox' ) {
 		$checked = checked($value, true, false);
 		$value = "true";
@@ -569,11 +581,7 @@ function _pfund_option_fields() {
         <tbody>
 <?php
 	$options = get_option( 'pfund_options' );
-	if ( array_key_exists( 'fields', $options ) ) {
-		$fields = $options['fields'];
-	} else {
-		$fields = array();
-	}
+	$fields = pfund_get_value( $options, 'fields', array() );
 	if ( count( $fields ) == 0 ) {
 		$fields[1] = array(
 			'type' => 'text'
@@ -609,13 +617,15 @@ function _pfund_render_option_field( $field_id, $field ) {
 		'user_email' => __( 'User Email', 'pfund' ),
 		'user_displayname' => __( 'User Display Name', 'pfund' )
 	);
+	$field_label = pfund_get_value( $field, 'label' );
+	$field_desc = pfund_get_value( $field, 'desc' );
 ?>
 	<tr class="form-table pfund-field-row" id="<?php echo $field_id; ?>">
 		<td>
-			<input class="pfund-label-field"  name="pfund_options[fields][<?php echo $field_id; ?>][label]" type='text' value="<?php echo $field['label'];?>"/>
+			<input class="pfund-label-field"  name="pfund_options[fields][<?php echo $field_id; ?>][label]" type='text' value="<?php echo $field_label;?>"/>
 		</td>
 		<td>
-			<textarea class="pfund-desc-field"  name="pfund_options[fields][<?php echo $field_id; ?>][desc]"><?php echo $field['desc'];?></textarea>
+			<textarea class="pfund-desc-field"  name="pfund_options[fields][<?php echo $field_id; ?>][desc]"><?php echo $field_desc;?></textarea>
 		</td>
 		<td>
 <?php
@@ -627,6 +637,11 @@ function _pfund_render_option_field( $field_id, $field ) {
 				break;
 			case 'camp_title':
 				_e( 'Campaign Title', 'pfund' );
+				$can_delete_field = false;
+				_pfund_hidden_type_field( $field_id, $field['type'] );
+				break;
+			case 'end_date':
+				_e( 'End Date', 'pfund' );
 				$can_delete_field = false;
 				_pfund_hidden_type_field( $field_id, $field['type'] );
 				break;
@@ -658,11 +673,13 @@ function _pfund_render_option_field( $field_id, $field ) {
 		</td>
 		<td>
 <?php
+			$content = '';
 			$sample_style = "display:none;";
+			$field_data = pfund_get_value( $field, 'data' );
 			switch( $field['type'] ) {
 				case 'select':
 					$sample_style = "";
-					$content .= pfund_render_select_field( $field['data'] );
+					$content .= pfund_render_select_field( $field_data );
 					$content .= '<br/>';
 					break;
 			}
@@ -674,16 +691,17 @@ function _pfund_render_option_field( $field_id, $field ) {
 				<a href="#" class="pfund-data-field-edit"><?php _e( 'Edit', 'pfund' );?></a>
 			</div>
 			<div class="pfund-data-type-edit" style="display:none;">
-				<textarea class="large-text code" name="pfund_options[fields][<?php echo $field_id; ?>][data]"><?php echo $field['data'] ?></textarea>
+				<textarea class="large-text code" name="pfund_options[fields][<?php echo $field_id; ?>][data]"><?php echo $field_data; ?></textarea>
 				<br/><a href="#" class="pfund-data-field-update"><?php _e( 'Update', 'pfund' );?></a>
 			</div>
 
 		</td>
 		<td>
 <?php
-			if ( $can_delete_field ) {
+			if ( $can_delete_field || $field['type'] == 'end_date') {
+				$required = pfund_get_value( $field, 'required', false );
 ?>
-				<input class="pfund-required-field"  name="pfund_options[fields][<?php echo $field_id; ?>][required]" type='checkbox' value="true" <?php checked($field['required'],'true');?> />
+				<input class="pfund-required-field"  name="pfund_options[fields][<?php echo $field_id; ?>][required]" type='checkbox' value="true" <?php checked( $required, 'true' );?> />
 <?php
 			} else {
 				_e( 'Yes', 'pfund' );
@@ -697,7 +715,7 @@ function _pfund_render_option_field( $field_id, $field ) {
 		<td class="pfund-shortcode-field">
 <?php
 
-			if ( array_key_exists( label, $field ) && ! empty( $field['label'] ) ) {
+			if ( isset ( $field['label'] ) ) {
 				echo pfund_determine_shortcode( $field_id, $field['type'] );
 			}
 ?>
@@ -724,7 +742,10 @@ function _pfund_render_option_field( $field_id, $field ) {
  */
 function _pfund_save_cause_fields( $cause_id ) {
 	_pfund_attach_uploaded_image( 'pfund-cause-image', $cause_id, '_pfund_cause_image' );
-	update_post_meta( $cause_id, "_pfund_cause_description", strip_tags( $_REQUEST['pfund-cause-description'] ) );
+	if ( isset( $_REQUEST['pfund-cause-description'] ) ) {
+		update_post_meta( $cause_id, "_pfund_cause_description",
+				strip_tags( $_REQUEST['pfund-cause-description'] ) );
+	}
 }
 
 

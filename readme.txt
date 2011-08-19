@@ -28,7 +28,7 @@ All donations for this plugin go to provide life-changing surgery for children i
 
 = Why should I use this plugin? =
 
-charity: water has raised over $9.8M using personal fundraising campaigns.  
+charity: water has raised over $10M using personal fundraising campaigns.
 This plugin adds the capability of creating personal fundraising campaigns on your WordPress site. 
 
 = What is a Cause? =
@@ -53,6 +53,7 @@ Each of the fields defined in the Personal Fundraiser Fields section of the Pers
 * **[pfund-donate]** PayPal donate button.  This shortcode is required in order to accept donations for the campaigns.
 * **[pfund-edit]** Required shortcode to display edit button.
 * **[pfund-camp-title]** The title of the campaign.
+* **[pfund-days-left]** The number of days left in the campaign (if an end date is specified for the campaign).
 * **[pfund-gift-goal]** The amount that the user hopes to raise for their campaign.
 * **[pfund-gift-tally]** The total amount raised.
 * **[pfund-giver-tally]** The total number of unique donors to the campaign.
@@ -61,6 +62,13 @@ Each of the fields defined in the Personal Fundraiser Fields section of the Pers
 * **Campaign Slug** URL prefix for campaigns.  Also the location of the page containing the list of causes.
 * **Cause Slug** URL prefix for causes.  Also the location of the page containing the list of campaigns.
 * **Currency Symbol** Currency symbol to display next to monetary amounts such as amount of donations received.
+* **Date Format** Date format to use to display dates.  The date formats correspond to the ones defined at: <a href="http://codex.wordpress.org/Formatting_Date_and_Time">http://codex.wordpress.org/Formatting_Date_and_Time</a>.  This plugin only supports the following subset of formatting characters:
+     * **d** Day of the month.
+     * **j** Day of the month with no leading zeros
+     * **m** Numeric month leading zeros
+     * **n** Numeric month without leading zeros
+     * **Y** Full numeric year, 4 digits
+     * **y** Numeric year: 2 digits
 * **Login Required To Create**  If checked, users must be logged in before they can create campaigns.  If it is not checked, users may create campaigns anonymously, but those campaigns stay in draft status until the user logs in.  Once the user logs in the campaign is assigned to that user.
 * **Allow Users To Register**  If users are not logged in, allow them to register using the custom registration the personal fundraiser plugin provides.
 * **Campaigns Require Approval**  If checked, campaigns for logged in users are saved as Pending Review until an admininstrator can approve them.  Campaigns pending review are only visible to the creator of the campaign as well as admins.  If this checkbox is not checked, campaigns will be publicly visible as soon as a logged in user saves them.
@@ -93,6 +101,7 @@ Each of the fields defined in the Personal Fundraiser Fields section of the Pers
         * **Date Selector** Displays a date picker to the user.
         * **Campaign Title** The field used to contain the campaign title.  This field is required and the type cannot be changed. 
         * **Campaign URL slug ** The field used to contain the campaign url suffix.  This field is required and the type cannot be changed.
+        * **End Date **  The field used to contain the campaign end date.  The type of this field cannot be changed.
         * **Large Text Input (textarea) ** Provides a large textbox for users to provide text.
         * **Image** Provides an image upload.
         * **Select Dropdown** Displays a dropdown for users to select a value.
@@ -136,9 +145,20 @@ PayPal has more information on using a donate button here: <a href="https://www.
 
 **Use PayPal Sandbox**
 If you are using PayPal's developer sandbox for testing, check this checkbox; otherwise leave it unchecked.
+
 == Screenshots ==
 
+1. Create Personal Fundraiser Screen
+2. Optional user registration
+
 == Changelog ==
+
+= 0.7.2 =
+
+* Cleaned up PHP notice messages.
+* Added date format option.
+* Added end date field.
+* Added pfund-days-left shortcode.
 
 = 0.7.1 =
 

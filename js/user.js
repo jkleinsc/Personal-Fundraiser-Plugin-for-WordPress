@@ -263,7 +263,13 @@ jQuery(function($) {
 	$('#pfund-form input').change(inputChanged);
 	$('#pfund-add-dialog').dialog(dialogSettings);
 	$('.pfund-edit-btn').click(showEditDialog);
-	$('.pfund-date').datepicker();
+	if (pfund.date_format) {
+		$('.pfund-date').datepicker({
+			dateFormat: pfund.date_format
+		});
+	} else {
+		$('.pfund-date').datepicker();
+	}	
 	$('#pfund-update-dialog').dialog({
 		modal: true,
 		resizable: false,

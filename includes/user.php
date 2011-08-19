@@ -33,7 +33,7 @@ function pfund_campaign_list() {
 		'posts_per_page' => -1
 	);
 
-	if ( array_key_exists( 'pfund_cause_id', $wp_query->query_vars ) ) {
+	if ( isset(  $wp_query->query_vars['pfund_cause_id'] ) ) {
 		$post_query['meta_query'] = array(
 			array(
 				'key' => '_pfund_cause_id',
@@ -161,6 +161,35 @@ function pfund_comments() {
 }
 
 /**
+ * Short code handler for pfund-days-left shortcode.  Returns the number of days
+ * before the campaign ends.  Due to timezone differences if the end date is
+ * within 24 hours of the current date, days left will return 1.  If the current
+ * date is over 24 hours past the end date, days left will return 0.  Otherwise
+ * the actual number of days will be returned.
+ * @return int The number of days left in the campaign
+ */
+function pfund_days_left() {
+	global $post;
+	if ( ! pfund_is_pfund_post() ){
+		return '';
+	}
+	$postid = $post->ID;
+	if ( _pfund_is_edit_new_campaign() ) {
+		$postid = _pfund_get_new_campaign()->ID;
+	}
+	$end_date = get_post_meta( $post->ID, '_pfund_end-date', true );
+	$now = time();
+	$diff = ( strtotime( $end_date ) - $now );
+	$days = round($diff / 86400);
+	if ( $days < -1 ) {
+		$days = 0;
+	} else if ( $days <= 1 ) {
+		$days = 1;
+	}
+	return $days;
+}
+
+/**
  * Direct causes and campaigns to the proper display template.
  * @return void
  */
@@ -179,7 +208,7 @@ function pfund_display_template() {
 	wp_enqueue_style( 'pfund-user', PFUND_URL.'css/user.css', array(), PFUND_VERSION );
 
 	$admin_email = get_option( 'admin_email' );
-	wp_localize_script( 'pfund-user', 'pfund', array(
+	$script_vars = array(
 		'cancel_btn' => __( 'Cancel', 'pfund' ),
 		'email_exists' => __( 'This email address is already registered', 'pfund' ),
 		'invalid_email' =>__( 'Invalid email address', 'pfund' ),
@@ -191,7 +220,11 @@ function pfund_display_template() {
 		'save_warning' => __( 'Your campaign has not been saved.  If you would like to save your campaign, stay on this page, click on the Edit button and then click on the Ok button.', 'pfund' ),
 		'unmask_passwd' => __( 'Unmask password', 'pfund' ),
 		'username_exists' => __( 'This username is already registered', 'pfund' )
-	) );
+	);
+	if ( ! empty( $options['date_format'] ) ) {
+		$script_vars['date_format'] = _pfund_get_jquery_date_fmt( $options['date_format'] );
+	}
+	wp_localize_script( 'pfund-user', 'pfund', $script_vars);
 
 	wp_enqueue_script( 'jquery-ui-datepicker', PFUND_URL.'js/jquery.ui.datepicker.js', array( 'jquery-ui-core' ), '1.8.14', true );
 	wp_enqueue_style( 'jquery-ui-pfund', PFUND_URL.'css/smoothness/jquery.ui.pfund.css', array(), '1.8.14' );
@@ -278,15 +311,16 @@ function pfund_edit() {
 		$editing_campaign = _pfund_is_edit_new_campaign();
 		if ( $editing_campaign ) {
 			$campaign = _pfund_get_new_campaign();
-			$campaignId = $campaign->ID;
-			$campaignTitle = $campaign->post_title;
+			$campaign_id = $campaign->ID;
+			$campaign_title = $campaign->post_title;
 		} else {
-			$campaignTitle = $post->post_title;
+			$campaign_title = $post->post_title;
+			$campaign_id = null;
 		}
 	} else {
 		$editing_campaign = true;
-		$campaignId = $post->ID;
-		$campaignTitle = $post->post_title;
+		$campaign_id = $post->ID;
+		$campaign_title = $post->post_title;
 		$campaign = $post;
 	}
 
@@ -311,13 +345,13 @@ function pfund_edit() {
 
 	if ( $editing_campaign ) {
 		$return_form .= '	<input type="hidden" name="pfund_action" value="update-campaign"/>';
-		$return_form .= '	<input id="pfund-campaign-id" type="hidden" name="pfund_campaign_id" value="'.$campaignId.'"/>';
-		$return_form .= wp_nonce_field( 'pfund-update-campaign'.$campaignId, 'n', true , false );
+		$return_form .= '	<input id="pfund-campaign-id" type="hidden" name="pfund_campaign_id" value="'.$campaign_id.'"/>';
+		$return_form .= wp_nonce_field( 'pfund-update-campaign'.$campaign_id, 'n', true , false );
 	} else {
 		$return_form .= '	<input type="hidden" name="pfund_action" value="create-campaign"/>';
 		$return_form .= wp_nonce_field( 'pfund-create-campaign'.$post->ID, 'n', true , false );
 	}
-	$return_form .= pfund_render_fields( $campaignId, $campaignTitle, $editing_campaign );
+	$return_form .= pfund_render_fields( $campaign_id, $campaign_title, $editing_campaign );
 	$return_form .= '</form>';
 	$return_form .= '</div>';
 	$return_form .= '<script type="text/javascript">';
@@ -327,7 +361,7 @@ function pfund_edit() {
 		'alertText' => __( '* This location is already taken', 'pfund' )
 	);
 	if ( $editing_campaign ) {
-		$validateSlug['extraData'] = $campaignId;
+		$validateSlug['extraData'] = $campaign_id;
 	}
 	$return_form .= 'jQuery(function($) {$.validationEngineLanguage.allRules.pfundSlug = '.json_encode($validateSlug).'});';
 	$return_form .= '</script>';
@@ -360,8 +394,11 @@ function pfund_giver_tally() {
  */
 function pfund_handle_action( $posts ) {
 	global $pfund_processed_action, $wp_query;
+	if ( empty ( $posts ) ) {
+		return $posts;
+	}
 	$post = $posts[0];
-	if ( array_key_exists( 'pfund_action', $wp_query->query_vars ) && ! $pfund_processed_action ) {
+	if ( isset( $wp_query->query_vars['pfund_action'] ) && ! $pfund_processed_action ) {
 		$action = $wp_query->query_vars['pfund_action'];
 		if ( ! in_array( $action, array( 'cause-list', 'campaign-list' ) ) ) {			
 			if ( ! pfund_is_pfund_post( $post ) ){
@@ -429,11 +466,7 @@ function pfund_handle_title( $atitle ) {
 	if ( ! pfund_is_pfund_post( ) ){
 		return $atitle;
 	}
-	if ( array_key_exists( 'pfund-camp-title', $_REQUEST ) ) {
-		return $_REQUEST['pfund-camp-title'];
-	} else {		
-		return $atitle;
-	}
+	return pfund_get_value( $_REQUEST, 'pfund-camp-title', $atitle );
 }
 
 /**
@@ -479,7 +512,7 @@ function pfund_progress_bar( $attrs, $content ) {
 	$return_content .= '		<span>&nbsp;</span>';
 	$return_content .= '	</div>';
 	if ( $remaining <= 0 ) {
-		if ( array_key_exists( 'funded_msg', $attrs ) ) {
+		if ( isset( $attrs['funded_msg'] ) ) {
 			$return_content .= '<h4>'.do_shortcode( $attrs['funded_msg'] ).'</h4>';
 		}
 	} else {
@@ -614,12 +647,13 @@ function pfund_setup_shortcodes() {
 	add_shortcode( 'pfund-campaign-list', 'pfund_campaign_list' );
 	add_shortcode( 'pfund-cause-list', 'pfund_cause_list' );
 	add_shortcode( 'pfund-comments', 'pfund_comments' );
+	add_shortcode( 'pfund-days-left', 'pfund_days_left' );
 	add_shortcode( 'pfund-donate', 'pfund_donate_button' );
 	add_shortcode( 'pfund-edit', 'pfund_edit' );
 	add_shortcode( 'pfund-giver-tally', 'pfund_giver_tally' );
 	add_shortcode( 'pfund-progress-bar', 'pfund_progress_bar' );
 	$options = get_option( 'pfund_options' );
-	if ( array_key_exists( 'fields',  $options ) ) {
+	if ( isset( $options['fields'] ) ) {
 		foreach ( $options['fields'] as $field_id => $field ) {
 			add_shortcode( 'pfund-'.$field_id, '_pfund_dynamic_shortcode' );
 		}
@@ -761,12 +795,9 @@ function _pfund_dynamic_shortcode( $attrs, $content, $tag ) {
 		return '';
 	}
 	switch ( $field['type'] ) {
+		case 'end_date':
 		case 'date':
-			if( ! empty( $options['date_format'] ) ) {
-				return date( $options['date_format'], strtotime( $data ) );
-			} else {
-				return $data;
-			}
+		 return pfund_format_date( $data , $options['date_format'] );
 		case 'text':
 		case 'textarea':
 			return wpautop( $data );
@@ -778,6 +809,32 @@ function _pfund_dynamic_shortcode( $attrs, $content, $tag ) {
 }
 
 /**
+ * Convert php date format to jquery date format.
+ * Derived from http://icodesnip.com/snippet/php/convert-php-date-style-dateformat-to-the-equivalent-jquery-ui-datepicker-string
+ * @param string $date_format php date format to convert.
+ * @return string corresponding jquery date format.
+ */
+function _pfund_get_jquery_date_fmt( $date_format ) {
+    $php_patterns = array(
+        //day
+        '/d/',        //day of the month
+        '/j/',        //day of the month with no leading zeros
+        //month
+        '/m/',        //numeric month leading zeros
+        '/n/',        //numeric month no leading zeros
+        //year
+        '/Y/',        //full numeric year
+        '/y/'     //numeric year: 2 digit
+    );
+    $jquery_formats = array(
+        'dd','d',
+        'mm','m',
+        'yy','y'
+    );
+    return preg_replace($php_patterns, $jquery_formats, $date_format);
+}
+
+/**
  * When a new campaign has been created, get that campaign.
  * @return mixed the new campaign or null if the current campaign isn't a
  * new campaign.
@@ -786,9 +843,9 @@ function _pfund_get_new_campaign() {
 	global $pfund_new_campaign;
 	
 	$new_campaign_actions = array( 'update-campaign', 'user-login' );
-	$action = $_REQUEST['pfund_action'];
+	$action = pfund_get_value( $_REQUEST, 'pfund_action' );
 	if ( ! isset( $pfund_new_campaign ) &&
-			array_key_exists( 'pfund_campaign_id', $_REQUEST )
+			isset( $_REQUEST['pfund_campaign_id'] )
 			&& in_array( $action, $new_campaign_actions ) ) {
 		$campaign_id = $_REQUEST['pfund_campaign_id'];
 		$campaign = get_post( $campaign_id );

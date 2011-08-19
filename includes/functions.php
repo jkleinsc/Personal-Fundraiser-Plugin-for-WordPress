@@ -16,6 +16,83 @@
 */
 
 /**
+ * Convert the passed in date to iso8601 (YYYY-MM-DD) format.
+ * @param string $date date to convert.
+ * @param string $format current format of date.
+ * @return string date in iso8601 format.
+ */
+function pfund_date_to_iso8601( $date, $format ) {
+	if( class_exists( 'DateTime' ) ) {
+		$date = DateTime::createFromFormat( $format, $date );
+		if ( $date ) {
+			return $date->format( 'Y-m-d' );
+		} else {
+			return "";
+		}
+	} else {
+		$date_map = array(
+			'y'=>'year',
+			'Y'=>'year',
+			'm'=>'month',
+			'n'=>'month',
+			'd'=>'day',
+			'j'=>'day'
+		);
+		$date_array = array(
+			'error_count' => 0,
+			'errors' => array()
+		);
+
+		$format = preg_split( '//', $format, -1, PREG_SPLIT_NO_EMPTY );
+		$date = preg_split( '//', $date, -1, PREG_SPLIT_NO_EMPTY );
+		$format_frag = $format[0];
+		$format_idx = 0;
+		$error_msg = null;
+
+		foreach ( $date as $idx => $date_frag ) {
+			if ( ! ctype_digit( $date_frag ) ) {
+				$format_idx++;
+				if ( !isset( $format[$format_idx] ) ) {
+					$error_msg = 'An unexpected separator was encountered';
+				} else {
+					$format_frag = $format[$format_idx];
+					if ( $date_frag != $format_frag ) {
+						$error_msg = 'An unexpected separator was encountered';
+					} else {
+						$format_idx++;
+						if ( ! isset( $format[$format_idx] ) ) {
+							$error_msg = 'An unexpected character was encountered';
+						} else {
+							$format_frag = $format[$format_idx];
+						}
+					}
+				}
+				if ( isset( $error_msg ) ) {
+					$date_array['error_count']++;
+					$date_array['errors'][$idx] = $error_msg;
+					break;
+				}
+			} else {
+				$date_key = $date_map[$format_frag];
+				if ( !isset( $date_array[$date_key] ) ) {
+					$date_array[$date_key] = $date_frag;
+				} else {
+					$date_array[$date_key] .= $date_frag;
+				}
+			}
+
+		}
+		if ( isset( $date_array['month'] ) && isset( $date_array['day'] )
+				&&  isset( $date_array['year'] ) )  {
+			$gmttime = gmmktime( 0, 0, 0, $date_array['month'], $date_array['day'], $date_array['year'] );
+			return gmdate( 'Y-m-d', $gmttime );
+		} else {
+			return '';
+		}
+	}
+}
+
+/**
  * Determine the short code for a specific personal fundraiser field.
  * @param string $id The id of the field.
  * @param string $type The type of field.
@@ -37,7 +114,7 @@ function pfund_determine_shortcode( $id, $type = '' ) {
  * campaign; otherwise return the content unmodified.
  */
 function pfund_handle_content( $content ) {
-	global $post, $pfund_update_message;
+	global $post, $pfund_update_message;	
 	if( $post->ID == null || ! pfund_is_pfund_post() ) {
 		return $content;
 	} else if ( $post->post_type == 'pfund_campaign' ) {
@@ -68,12 +145,13 @@ function pfund_is_pfund_post( $post_to_check = false, $include_lists = false ) {
 		$pfund_post_types[] = 'pfund_cause_list';
 		$pfund_post_types[] = 'pfund_campaign_list';
 	}
-	if( $post_to_check->ID != null && in_array( $post_to_check->post_type, $pfund_post_types ) ) {
+	if( $post_to_check && $post_to_check->ID != null && in_array( $post_to_check->post_type, $pfund_post_types ) ) {
 		return true;
 	} else {
 		return false;
 	}
 }
+
 /**
  * Render the input fields for the personal fundraising fields.
  * @param int $postid The id of the campaign that is being edited.
@@ -94,11 +172,12 @@ function pfund_render_fields( $postid, $campaign_title, $editing_campaign = true
 	$inputfields = array();
 	if ( is_admin() ) {
 		$render_type = 'admin';
-		if ( array_key_exists( 'fields',  $options ) ) {
+		if ( isset( $options['fields'] ) ) {
 			foreach ( $options['fields'] as $field_id => $field ) {
+				$field_values = pfund_get_value( $metavalues, '_pfund_'.$field_id, array( '' ) );
 				$inputfields['pfund-'.$field_id] = array(
 					'field' => $field,
-					'value' => $metavalues['_pfund_'.$field_id][0]
+					'value' => $field_values[0]
 				);
 			}
 		}
@@ -112,53 +191,63 @@ function pfund_render_fields( $postid, $campaign_title, $editing_campaign = true
 		$attrs = $matches[3];
 		$inputfields = array();
 		foreach( $tags as $idx => $tag ) {
-			$field_id = substr( $tag, 6 );
-			if ( array_key_exists( $field_id, $options['fields'] ) ) {				
+			$field_id = substr( $tag, 6 );			
+			$field_values = pfund_get_value( $metavalues, '_pfund_'.$field_id, array( '' ) );
+			if ( isset( $options['fields'][$field_id] ) ) {
 				$inputfields[$tag] = array(
 					'field' => $options['fields'][$field_id],
 					'attrs' => $attrs[$idx],
-					'value' => $metavalues['_pfund_'.$field_id][0]
+					'value' => $field_values[0]
 				);
 			}
 		}
 		$content = '<ul class="pfund-list">';
 	}
 
-	if ( ! array_key_exists( 'pfund-camp-title', $inputfields ) ) {
+	if ( ! isset( $inputfields['pfund-camp-title'] ) ) {
 		$inputfields['pfund-camp-title'] = array(
 			'field' => $options['fields']['camp-title'],
 			'value' => $campaign_title
 		);
 	}
 
-	if ( ! array_key_exists( 'pfund-camp-location', $inputfields ) ) {
+	if ( ! isset( $inputfields['pfund-camp-location'] ) ) {
 		$inputfields['pfund-camp-location'] = array(
 			'field' => $options['fields']['camp-location']
 		);
 	}
 
-	if ( ! array_key_exists( 'pfund-gift-goal', $inputfields ) ) {
+	$current_goal = pfund_get_value($metavalues, '_pfund_gift-goal', array('' ) );
+	if ( ! isset( $inputfields['pfund-gift-goal'] ) ) {
 		$inputfields['pfund-gift-goal'] = array(
 			'field' => $options['fields']['gift-goal'],
-			'value' => $metavalues['_pfund_gift-goal'][0]
+			'value' => $current_goal[0]
 		);
 	}
 
-	uasort($inputfields, _pfund_sort_fields);
+	$current_tally = pfund_get_value($metavalues, '_pfund_gift-tally', array('' ) );
+	if ( ! isset( $inputfields['pfund-gift-tally'] ) ) {
+		$inputfields['pfund-gift-tally'] = array(
+			'field' => $options['fields']['gift-tally'],
+			'value' => $current_tally[0]
+		);
+	}
+
+	uasort( $inputfields, '_pfund_sort_fields' );
 	$hidden_inputs = '';
 	$field_idx = 0;
 	foreach( $inputfields as $tag => $field_data ) {
 		$field = $field_data['field'];
-		$value = $field_data['value'];
+		$value = pfund_get_value( $field_data, 'value' );
 
 		$field_options = array(
 			'name' => $tag,
-			'desc' => $field['desc'],
-			'label' => $field['label'],
+			'desc' => pfund_get_value( $field, 'desc' ),
+			'label' => pfund_get_value( $field, 'label' ),
 			'value' => $value,
 			'render_type' => $render_type,
 			'field_count' => $field_idx,
-			'required' => $field['required'],
+			'required' => pfund_get_value( $field, 'required', false )
 		);
 
 		switch ( $field['type'] ) {
@@ -193,8 +282,13 @@ function pfund_render_fields( $postid, $campaign_title, $editing_campaign = true
 					$hidden_inputs .= '	<input type="hidden" name="'.$tag.'" value="'.$attr["value"].'"/>';
 				}
 				break;
+			case 'end_date':
 			case 'date':
 				$field_options['class'] = 'pfund-date';
+				$field_options['value'] = pfund_format_date( 
+						$field_options['value'],  
+						$options['date_format']
+				);
 				$content .= _pfund_render_text_field( $field_options );
 				$field_idx++;
 				break;			
@@ -295,23 +389,36 @@ function pfund_restrict_edit( $caps, $cap, $user_id, $args ) {
  * fields to.
  */
 function pfund_save_campaign_fields( $campid ) {
-	$options = get_option( 'pfund_options' );
-	if ( array_key_exists( 'fields',  $options ) ) {
+	$options = get_option( 'pfund_options' );	
+	if ( isset( $options['fields'] ) ) {
 		$fieldname = '';
 		foreach ( $options['fields'] as $field_id => $field ) {
 			$fieldname = 'pfund-'.$field_id;			
 			switch( $field['type'] ) {
+				case 'end_date':
+				case 'date':
+					if ( isset( $_REQUEST[$fieldname] ) ) {
+						$date_format = pfund_get_value( $options, 'date_format', 'm/d/y' );
+						if ( isset( $_REQUEST[$fieldname] ) && empty( $_REQUEST[$fieldname] ) ) {
+							$date_to_save = $_REQUEST[$fieldname];
+						} else {
+							$date_to_save = pfund_date_to_iso8601( $_REQUEST[$fieldname] , $date_format );
+						}
+						update_post_meta( $campid, "_pfund_".$field_id, $date_to_save );
+					}
 				case 'image':
 					 _pfund_attach_uploaded_image( $fieldname, $campid, "_pfund_".$field_id );
 					break;
 				case 'user_goal':
 				case 'gift_tally':
-					if (array_key_exists( $fieldname, $_REQUEST ) ) {
+					if ( isset( $_REQUEST[$fieldname] ) ) {
 						update_post_meta( $campid, "_pfund_".$field_id, absint( $_REQUEST[$fieldname] ) );
 					}
 					break;
 				default:
-					update_post_meta( $campid, "_pfund_".$field_id, strip_tags( $_REQUEST[$fieldname] ) );
+					if ( isset( $_REQUEST[$fieldname] ) ) {
+						update_post_meta( $campid, "_pfund_".$field_id, strip_tags( $_REQUEST[$fieldname] ) );
+					}
 					break;
 			}
 		}
@@ -381,7 +488,7 @@ function pfund_send_mc_email($email, $merge_vars, $campId, $listId='', $email_ty
  * attachment in.
  */
 function _pfund_attach_uploaded_image( $fieldname, $postid, $metaname ) {
-	if( is_uploaded_file( $_FILES[$fieldname]['tmp_name'] ) ) {
+	if( isset( $_FILES[$fieldname] ) && is_uploaded_file( $_FILES[$fieldname]['tmp_name'] ) ) {
 		$data = media_handle_upload( $fieldname, $post_id, array( 'post_status' => 'private' ) );
 		if( is_wp_error( $data ) ) {
 			$errors[] = $data;
@@ -393,20 +500,60 @@ function _pfund_attach_uploaded_image( $fieldname, $postid, $metaname ) {
 }
 
 /**
+ * Format the specified date with the specified format.
+ * @param string $date either an iso8601 (YYYY-MM-DD) formatted date or a
+ * mm/dd/yy date.
+ * @param string $format the format to return the date in.
+ * @return string the formatted date.
+ */
+function pfund_format_date( $date, $format ) {
+	if ( empty($date) ) {
+		return $date;
+	}
+	//Date is stored in old format of m/d/y
+	if ( strlen( $date ) == 8 ) {
+		$date = pfund_date_to_iso8601( $date, 'm/d/y' );
+	}
+	return gmdate( $format, strtotime( $date ) );
+}
+
+
+
+/**
+ * Utility function to get value from array.  If the value doesn't exist,
+ * return the specified default value.
+ * @param array $array The array to pull the value from.
+ * @param string $key The array key to use to get the value.
+ * @param mixed $default The optional default to use if the key doesn't exist.
+ * This value defaults to an empty string.
+ * @return mixed The specified value from the array or the default if it doesn't
+ * exist
+ */
+function pfund_get_value( $array, $key, $default = '' ) {
+	if ( isset( $array[$key] ) ) {
+		return $array[$key];
+	} else {
+		return $default;
+	}
+}
+
+/**
  * Render the field using the specified render type.
  * @param array $field_options named options for field.
  * @param string $field_contents actual input field to render.
  * @return string the rendered HTML.
  */
 function _pfund_render_field_list_item( $field_options, $field_contents ) {
-	$content .= '<li>';
+	$content = '<li>';
 	$content .= '	<label for="'.$field_options['name'].'">'.$field_options['label'];
-	if ( $field_options['required'] ) {
+	if ( isset( $field_options['required'] ) && $field_options['required'] ) {
 		$content .= '<abbr title="'.esc_attr__( 'required', 'pfund' ).'">*</abbr>';
 	}
 	$content .= '</label>';
 	$content .= $field_contents;
-	if ( $field_options['render_type'] == 'user' && ! empty( $field_options['desc'] ) ) {
+	if ( isset( $field_options['render_type'] ) &&  
+			$field_options['render_type'] == 'user' &&
+			! empty( $field_options['desc'] ) ) {
 		$content .= '<div class="pfund-field-desc"><em><small>'.$field_options['desc'].'</small></em></div>';
 	}
 	$content .= '</li>';
@@ -448,26 +595,34 @@ function _pfund_render_text_field( $field_options = '') {
 		'type' => 'text',
 		'value' => '',
 	);
-	if ( $field_options['required'] || array_key_exists( 'custom_validation', $field_options ) ) {
+	$field_options = array_merge( $defaults, $field_options );
+	if ( ( isset( $field_options['required'] ) && $field_options['required'] ) ||
+			isset( $field_options['custom_validation'] ) ) {
 		$field_options['class'] .= ' validate[';
 		if ( $field_options['required'] ) {
 			$field_options['class'] .= 'required';
-			if ( array_key_exists( 'custom_validation', $field_options ) ) {
+			if ( isset( $field_options['custom_validation'] ) ) {
 				$field_options['class'] .= ',';
 			}
 		}
-		$field_options['class'] .=  $field_options['custom_validation'];
+		if ( isset( $field_options['custom_validation'] ) ) {
+			$field_options['class'] .=  $field_options['custom_validation'];
+		}
 		$field_options['class'] .= ']';
 	}
-	$field_options = array_merge($defaults, $field_options);
-	$content .= $field_options['pre_input'];
+	$content = '';
+	if ( isset( $field_options['pre_input'] ) ) {
+		$content .= $field_options['pre_input'];
+	}
 	$content .= '	<input class="'.$field_options['class'].'" id="'.$field_options['name'].'"';
 	$content .= '		type="'.$field_options['type'].'" name="'.$field_options['name'].'"';
 	if ( $field_options['type'] != 'file' ) {
 		$content .= ' value="'.esc_attr( $field_options['value'] ).'"';
 	}
 	$content .= '/>';
-	$content .= $field_options['additional_content'];
+	if ( isset( $field_options['additional_content'] ) ) {
+		$content .= $field_options['additional_content'];
+	}
 	return _pfund_render_field_list_item( $field_options, $content);
 }
 

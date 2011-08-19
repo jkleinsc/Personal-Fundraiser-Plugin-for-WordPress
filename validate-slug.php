@@ -5,14 +5,14 @@
 	require_once( ABSPATH . 'wp-admin/includes/post.php' );
 	
 	$slug = $_POST['validateValue'];
-	if (array_key_exists( 'extraData', $_POST ) ) {
-		$campaignId = $_POST['extraData'];
+	if ( isset( $_POST['extraData'] ) ) {
+		$campaign_id = $_POST['extraData'];
 	} else {
-		$campaignId = 0;
+		$campaign_id = 0;
 	}
 	$returnArray = array( $_POST['validateId'], $_POST['validateError'] );
 	
-	$approved_slug = wp_unique_post_slug( $slug, $campaignId, 'publish', 'pfund_campaign', 0 );
+	$approved_slug = wp_unique_post_slug( $slug, $campaign_id, 'publish', 'pfund_campaign', 0 );
 	if ($approved_slug == $slug) {
 		$returnArray[] = "true";
 	} else {

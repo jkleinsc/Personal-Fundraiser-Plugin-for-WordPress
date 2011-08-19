@@ -31,7 +31,9 @@ function pfund_activate() {
 				'campaign_slug' => 'give',
 				'cause_slug' => 'causes',
 				'currency_symbol' => '$',
+				'date_format' => 'm/d/y',
 				'login_required' => true,
+				'mailchimp' => false,
 				'submit_role' => array( 'subscriber' ),
 				'fields' => array(
 					'camp-title' => array(
@@ -45,6 +47,11 @@ function pfund_activate() {
 						'desc' => __( 'The URL for your campaign', 'pfund' ),
 						'type' => 'camp_location',
 						'required' => 'true'
+					),
+					'end-date'  => array(
+						'label' => __( 'End Date', 'pfund' ),
+						'desc' => __( 'The date your campaign ends', 'pfund' ),
+						'type' => 'end_date'						
 					),
 					'gift-goal' => array(
 						'label' => __( 'Goal', 'pfund' ),
@@ -62,7 +69,7 @@ function pfund_activate() {
 			);
 			$options_changed = true;
 		}
-		if ( ! array_key_exists( 'cause_root', $pfund_options ) ) {
+		if ( ! isset( $pfund_options['cause_root'] ) ) {
 			$page = array(
 				'comment_status' => 'closed',
 				'ping_status' => 'closed',
@@ -77,7 +84,7 @@ function pfund_activate() {
 			$pfund_options['cause_root'] = $cause_root_id;
 			$options_changed = true;
 		}		
-		if ( ! array_key_exists( 'campaign_root', $pfund_options ) ) {
+		if ( ! isset( $pfund_options['campaign_root'] ) ) {
 			$page = array(
 				'comment_status' => 'closed',
 				'ping_status' => 'closed',
@@ -90,6 +97,32 @@ function pfund_activate() {
 			);
 			$cause_root_id = wp_insert_post( $page );
 			$pfund_options['campaign_root'] = $cause_root_id;
+			$options_changed = true;
+		}
+		if ( ! isset( $pfund_options['date_format'] ) ) {
+			$pfund_options['date_format'] = 'm/d/y';
+			$options_changed = true;
+		}
+		if ( ! isset( $pfund_options['mailchimp'] ) ) {
+			$pfund_options['mailchimp'] = false;
+			$options_changed = true;
+		}
+		if ( ! isset( $pfund_options['paypal_sandbox'] ) ) {
+			$pfund_options['paypal_sandbox'] = false;
+			$options_changed = true;
+		}
+		if ( ! isset( $pfund_options['fields']['end-date'] ) ) {
+			$pfund_options['fields']['end-date'] = array(
+				'label' => __( 'End Date', 'pfund' ),
+				'desc' => __( 'The date your campaign ends', 'pfund' ),
+				'type' => 'end_date',
+				'required' => 'false'
+			);
+			$options_changed = true;
+		}
+		if ( ! isset( $pfund_options['version'] ) ||
+				$pfund_options['version'] != PFUND_VERSION ) {
+			$pfund_options['version'] = PFUND_VERSION;
 			$options_changed = true;
 		}
 		if ( $options_changed == true ) {
@@ -126,6 +159,10 @@ function pfund_add_rewrite_rules( $flush_rules = true ) {
  */
 function pfund_init() {
 	global $pfund_processed_action;
+	$pfund_options = get_option( 'pfund_options' );
+	if ( ! isset( $pfund_options['version'] ) || $pfund_options['version'] != PFUND_VERSION ) {
+		pfund_activate();
+	}
 	$pfund_processed_action = false;
 	_pfund_load_translation_file();
 	_pfund_register_types();
