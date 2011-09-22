@@ -148,8 +148,8 @@ If you are using PayPal's developer sandbox for testing, check this checkbox; ot
 
 == Screenshots ==
 
-1. Create Personal Fundraiser Screen
-2. Optional user registration
+1. Create Personal Fundraiser Screen.
+2. Optional user registration.
 
 == Changelog ==
 
