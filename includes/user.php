@@ -18,6 +18,89 @@
 require_once( PFUND_DIR . '/includes/paypalfunctions.php' );
 
 /**
+ * Add a gift donation to the campaign.  Fired from the pfund-add-gift action.
+ * This function will update the gift tally for the campaign, add a comment
+ * detailing the donation and fire actions for additional processing.
+ * @param array $transaction_array array detailing the donation with the
+ * following keys:
+ *   success -- boolean indicating if transaction was successful.
+ *   amount -- Transaction amount
+ *   donor_first_name -- Donor first name
+ *   donor_last_name -- Donor last name
+ *   donor_email -- Donor email
+ *   anonymous -- boolean indicating if the gift was anonymous.
+ *   error_code -- When an error occurs, one of the following values is returned:
+ *		no_response_returned -- A response was not received from PayPal.
+ *		paypal_returned_failure -- PayPal returned a failure.
+ *		wp_error -- A WP error was returned.
+ *		exception_encountered -- An unexpected exception was encountered.
+ *	 wp_error -- If the error_code is wp_error, the WP_Error object returned.
+ *	 error_msg -- Text message describing error encountered.
+ * @param mixed $post the post object containing the campaign.
+ */
+function pfund_add_gift( $transaction_array, $post ) {
+	$processed_transactions = get_post_meta( $post->ID, '_pfund_transaction_ids' );
+	$transaction_nonce = $transaction_array['transaction_nonce'];
+	//Make sure this transaction hasn't already been processed.
+	if ( is_array( $processed_transactions ) && in_array( $transaction_nonce, $processed_transactions ) ) {
+		return;
+	} else if ( !is_array( $processed_transactions ) && $processed_transactions == $transaction_nonce ) {
+		return;
+	}
+	if ( $transaction_array['success'] == true) {
+		//Update gift tally
+		$tally = get_post_meta( $post->ID, '_pfund_gift-tally', true );
+		if ( $tally == '' ) {
+			$tally = 0;
+		}
+		$tally += $transaction_array['amount'];
+		update_post_meta( $post->ID, '_pfund_gift-tally', $tally );
+		add_post_meta( $post->ID, '_pfund_transaction_ids', $transaction_nonce );		
+		add_post_meta( $post->ID, '_pfund_transactions', $transaction_array );
+		_pfund_update_giver_tally( $post->ID );
+
+		$options = get_option( 'pfund_options' );
+		//Add comment for transaction.
+		if ( $transaction_array['anonymous'] ) {
+			$commentdata = array(
+				'comment_post_ID' => $post->ID,
+				'comment_content' => sprintf(
+					__( 'An anonymous gift of %s%d was received.', 'pfund' ),
+					$options['currency_symbol'],
+					$transaction_array['amount']
+				),
+				'comment_approved' => 1
+			);
+		} else {
+			$commentdata = array(
+				'comment_post_ID' => $post->ID,
+				'comment_author' => $transaction_array['donor_first_name'] . ' ' . $transaction_array['donor_last_name'],
+				'comment_author_email' => $transaction_array['donor_email'],
+				'comment_content' => sprintf(
+					__( '%s %s donated %s%d.', 'pfund' ),
+					$transaction_array['donor_first_name'],
+					$transaction_array['donor_last_name'],
+					$options['currency_symbol'],
+					$transaction_array['amount']
+				),
+				'comment_approved' => 1
+			);
+		}
+		if ( ! empty( $transaction_array['comment'] ) ) {
+			$commentdata['comment_content'] = $transaction_array['comment'];
+		}
+		$comment_id = wp_insert_comment( $commentdata );
+		add_comment_meta($comment_id, 'pfund_trans_amount', $transaction_array['amount']);
+		//Fire action for any additional processing.
+		do_action( 'pfund-processed-transaction', $transaction_array, $post );
+		$goal = get_post_meta( $post->ID, '_pfund_gift-goal', true );
+		if ( $tally >= $goal ) {
+			do_action('pfund-reached-user-goal', $transaction_array, $post, $goal );
+		}
+	}
+}
+
+/**
  * Shortcode handler for pfund-campaign-list to display the list of current
  * campaigns.
  * @return string HTML that contains the campaign list.
@@ -251,7 +334,7 @@ function pfund_display_template() {
 function pfund_donate_button() {
 	global $post;
 	$options = get_option( 'pfund_options' );
-	if( $post->ID == null || $post->post_type != 'pfund_campaign' ) {
+	if ( ! pfund_is_pfund_post() ) {
 		return '';
 	}	
 	$page_url = get_permalink( $post );
@@ -376,7 +459,7 @@ function pfund_edit() {
  */
 function pfund_giver_tally() {
 	global $post;
-	if( $post->ID == null || $post->post_type != 'pfund_campaign' ) {
+	if ( ! pfund_is_pfund_post() ) {
 		return '';
 	} else {
 		$tally = get_post_meta( $post->ID, '_pfund_giver-tally', true );
@@ -435,7 +518,10 @@ function pfund_handle_action( $posts ) {
 				break;
 			case 'donate-campaign':
 				_pfund_process_donate( $post );
-				break;			
+				break;
+			case 'donate-thanks':
+				_pfund_display_thanks();
+				break;
 			case 'update-campaign':
 				_pfund_save_camp( $post, 'update' );
 				break;
@@ -498,7 +584,9 @@ function pfund_progress_bar( $attrs, $content ) {
 	$remaining = $goal - $tally;
 
 	$return_content = '<div class="pfund-progress">';
-	$return_content .='	<h3>'.do_shortcode( $attrs['title'] ).'</h3>';
+	if ( ! empty( $attrs['title'] ) ) {
+		$return_content .='	<h3>'.do_shortcode( $attrs['title'] ).'</h3>';
+	}
 	$return_content .='	<p class="pfund-progress-desc">'.do_shortcode( $content ).'</p>';
 
 	$funding_percentage = 1;
@@ -518,11 +606,11 @@ function pfund_progress_bar( $attrs, $content ) {
 	} else {
 		$return_content .= '<div id="progressStat-Met"><span class="arrow"></span>';
 		$return_content .= '<p>'.__( 'met', 'pfund' );
-		$return_content .= '<span class="met-amount">'.$options['currency_symbol'].$tally.'</span></p></div>';
+		$return_content .= '<span class="met-amount">'.$options['currency_symbol'].number_format( floatval( $tally ) ).'</span></p></div>';
 		$return_content .= '<div id="progressStat-Needed">';
 		$return_content .= '<span class="arrow"></span>';
 		$return_content .= '<p>'.__( 'needed', 'pfund' );
-		$return_content .= '<span class="needed-amount">'.$options['currency_symbol'].$remaining.'</span></p></div>';
+		$return_content .= '<span class="needed-amount">'.$options['currency_symbol'].number_format( floatval( $remaining ) ).'</span></p></div>';
 	}
 	$return_content .= '</div>';
 	return $return_content;
@@ -548,19 +636,17 @@ function pfund_progress_bar( $attrs, $content ) {
  * @param mixed $post the post object containing the campaign.
  */
 function pfund_send_donate_email( $transaction_array, $post ) {
-	$author_data = get_userdata($post->post_author);
-	$campaignUrl = get_permalink( $post );
 	if ( apply_filters ('pfund_mail_on_donate', true, $transaction_array ) ) {
 		$options = get_option( 'pfund_options' );
+		$author_data = pfund_get_contact_info( $post, $options );
+		$campaignUrl = get_permalink( $post );
 		if ( $options['mailchimp'] ) {
 			$merge_vars = array(
-				'FNAME' => $author_data->first_name,
-				'LNAME' => $author_data->last_name,
+				'NAME' => $author_data->display_name,
 				'CAMP_TITLE' => $post->post_title,
 				'CAMP_URL' => $campaignUrl,
 				'DONATE_AMT' => $options['currency_symbol'].$transaction_array['amount']
-			);
-			
+			);			
 			if ( $transaction_array['anonymous'] ) {
 				$merge_vars['DONOR_ANON'] = 'true';
 			} else {
@@ -570,7 +656,7 @@ function pfund_send_donate_email( $transaction_array, $post ) {
 			}
 			pfund_send_mc_email($author_data->user_email, $merge_vars, $options['mc_email_donate_id']);
 		} else {
-			$pub_message = sprintf(__( 'Dear %s,', 'pfund' ), $author_data->first_name).PHP_EOL;
+			$pub_message = sprintf(__( 'Dear %s,', 'pfund' ), $author_data->display_name ).PHP_EOL;
 			if ( $transaction_array['anonymous'] ) {
 				$pub_message .= sprintf(__( 'An anonymous gift of %s%d has been received for your campaign, %s.', 'pfund' ),
 						$options['currency_symbol'],
@@ -614,14 +700,13 @@ function pfund_send_donate_email( $transaction_array, $post ) {
  * @param mixed $post the post object containing the campaign.
  */
 function pfund_send_goal_reached_email( $transaction_array, $post, $goal ) {
-	$author_data = get_userdata($post->post_author);
-	$campaignUrl = get_permalink( $post );
 	if ( apply_filters ('pfund_mail_on_goal_reached', true, $transaction_array ) ) {
 		$options = get_option( 'pfund_options' );
+		$author_data = pfund_get_contact_info( $post, $options );
+		$campaignUrl = get_permalink( $post );
 		if ( $options['mailchimp'] ) {
 			$merge_vars = array(
-				'FNAME' => $author_data->first_name,
-				'LNAME' => $author_data->last_name,
+				'NAME' => $author_data->display_name,
 				'CAMP_TITLE' => $post->post_title,
 				'CAMP_URL' => $campaignUrl,
 				'GOAL_AMT' => $goal
@@ -769,6 +854,17 @@ function _pfund_determine_campaign_status( $current_status = '') {
 }
 
 /**
+ * Displays a thank you message after a donation has been received.
+ */
+function _pfund_display_thanks() {
+	global $pfund_update_message;
+
+	$title = esc_attr__( 'Thanks for donating', 'pfund');
+	$pfund_update_message = '<div id="pfund-update-dialog" style="display:none;" title="'.$title.'">';
+	$pfund_update_message .= '<div>'.__( 'Thank you for your donation!', 'pfund' ).'</div></div>';
+}
+
+/**
  * Handler for the dynamic shortcodes created by personal fundraiser fields.
  * @param array $attrs the attributes for the shortcode
  * @param string $content the content between the shortcode begin and end tags.
@@ -792,7 +888,11 @@ function _pfund_dynamic_shortcode( $attrs, $content, $tag ) {
 
 	$data = get_post_meta( $postid, '_pfund_'.$field_id, true );
 	if( empty( $data ) ) {
-		return '';
+		if ( in_array( $field['type'], array( 'user_goal', 'gift_tally' ) ) ) {
+			return '0';
+		} else {
+			return '';
+		}
 	}
 	switch ( $field['type'] ) {
 		case 'end_date':
@@ -803,6 +903,12 @@ function _pfund_dynamic_shortcode( $attrs, $content, $tag ) {
 			return wpautop( $data );
 		case 'image':
 			return '<img class="pfund-img" src="' . wp_get_attachment_url( $data ) . '" />';
+		case 'user_goal':
+		case 'gift_tally':
+			if ( empty ( $data ) ) {
+				$data = '0';
+			}
+			return number_format( floatval( $data ) );
 		default:
 			return $data;
 	}
@@ -908,15 +1014,6 @@ function _pfund_is_edit_new_campaign() {
  * Process a donation to a campaign.
  */
 function _pfund_process_donate( $post ){
-	$transaction_nonce = $_REQUEST['n'];
-	$processed_transactions = get_post_meta( $post->ID, '_pfund_transaction_ids');
-	//Make sure this transaction hasn't already been processed.
-	if ( is_array( $processed_transactions ) && in_array( $transaction_nonce, $processed_transactions ) ) {		
-		return;
-	} else if ( !is_array( $processed_transactions ) && $processed_transactions == $transaction_nonce) {
-		return;
-	}
-
 	//Handle various payment platforms.
 	$confirmation_type = $_REQUEST['t'];
 	switch( $confirmation_type ) {
@@ -928,65 +1025,24 @@ function _pfund_process_donate( $post ){
 			break;
 		default:
 			$transaction_array = array(
-				'amount' => $_REQUEST['a']
+				'amount' => $_REQUEST['a'],
+				'success' => true
 			);
+	}
+
+	if (isset($_REQUEST['n'])) {
+		$transaction_array['transaction_nonce'] = $_REQUEST['n'];
 	}
 
 	//Allow integration of other transactions processing systems
 	$transaction_array = apply_filters( 'pfund-transaction-array', $transaction_array );
-
-	if ( $transaction_array['success'] == true) {
-		//Update gift tally
-		$tally = get_post_meta( $post->ID, '_pfund_gift-tally', true );
-		if ( $tally == '' ) {
-			$tally = 0;
-		}
-		$tally += $transaction_array['amount'];
-		update_post_meta( $post->ID, '_pfund_gift-tally', $tally );
-		add_post_meta( $post->ID, '_pfund_transaction_ids', $transaction_nonce );
-		$transaction_array['transaction_nonce'] = $transaction_nonce;
-		add_post_meta( $post->ID, '_pfund_transactions', $transaction_array );
-		_pfund_update_giver_tally( $post->ID );
-
-		$options = get_option( 'pfund_options' );
-		//Add comment for transaction.
-		if ( $transaction_array['anonymous'] ) {
-			$commentdata = array(
-				'comment_post_ID' => $post->ID,
-				'comment_content' => sprintf(
-					__( 'An anonymous gift of %s%d was received.', 'pfund' ),
-					$options['currency_symbol'],
-					$transaction_array['amount']
-				),
-				'comment_approved' => 1
-			);
-		} else {
-			$commentdata = array(
-				'comment_post_ID' => $post->ID,
-				'comment_author' => $transaction_array['donor_first_name'] . ' ' . $transaction_array['donor_last_name'],
-				'comment_author_email' => $transaction_array['donor_email'],
-				'comment_content' => sprintf(
-					__( '%s %s donated %s%d.', 'pfund' ),
-					$transaction_array['donor_first_name'],
-					$transaction_array['donor_last_name'],
-					$options['currency_symbol'],
-					$transaction_array['amount']
-				),
-				'comment_approved' => 1
-			);
-		}
-		wp_insert_comment( $commentdata );
-		//Fire action for any additional processing.
-		do_action( 'pfund-processed-transaction', $transaction_array, $post );
-		$goal = get_post_meta( $post->ID, '_pfund_gift-goal', true );
-		if ( $tally >= $goal ) {
-			do_action('pfund-reached-user-goal', $transaction_array, $post, $goal );
-		}
-		//For IPN response exit since this is a server-side call.
-		if ( $confirmation_type == 'ipn' ) {
-			exit();
-		}
+	do_action( 'pfund-add-gift', $transaction_array, $post );
+	
+	//For IPN response exit since this is a server-side call.
+	if ( $confirmation_type == 'ipn' ) {
+		exit();
 	}
+	_pfund_display_thanks();
 }
 
 /**
@@ -1045,7 +1101,7 @@ function _pfund_save_camp( $post, $update_type = 'add' ) {
 		update_post_meta( $campaign_id, '_pfund_cause_id', $post->ID );
 		$pfund_new_campaign = get_post( $campaign_id );
 		$pfund_is_edit_new_campaign = true;
-		$update_title = __( 'Campaign added', 'pfund');
+		$update_title = esc_attr__( 'Campaign added', 'pfund');
 		if ( $status == 'publish' ) {
 			$update_message = __( 'Your campaign has been created and is now available for public viewing at <a href="%s">%s</a>.', 'pfund' );
 		} else if ( $status == 'pending' && is_user_logged_in() ) {
@@ -1059,7 +1115,7 @@ function _pfund_save_camp( $post, $update_type = 'add' ) {
 			$campaign_fields['post_status'] = $status;
 		}
 		wp_update_post( $campaign_fields );
-		$update_title = __( 'Campaign updated', 'pfund' );
+		$update_title = esc_attr__( 'Campaign updated', 'pfund' );
 		if ( $status == 'publish' ) {
 			$update_message = __( 'Your campaign has been updated and is available for public viewing at <a href="%s">%s</a>.', 'pfund' );
 		} else if ( $status == 'pending' && is_user_logged_in() ) {

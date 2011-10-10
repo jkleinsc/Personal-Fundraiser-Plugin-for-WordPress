@@ -28,7 +28,7 @@ function pfund_admin_css() {
  * Initialize administrator functionality.
  */
 function pfund_admin_init() {
-	$options = get_option( 'pfund_options' );
+	$options = get_option( 'pfund_options' );	
 	register_setting( 'pfund_options', 'pfund_options' );
 	add_settings_section( 'pfund_main_options', __( 'Personal Fundraiser Options', 'pfund' ), 'pfund_main_section_text', 'pfund' );
 	add_settings_field(
@@ -142,7 +142,7 @@ function pfund_admin_init() {
 		'pfund_paypal_options',
 		array(
 			'name' => 'paypal_donate_btn',
-			'value' => $options['paypal_donate_btn']
+			'value' => pfund_get_value( $options, 'paypal_donate_btn' )
 		)
 	);
 	add_settings_field(
@@ -153,7 +153,7 @@ function pfund_admin_init() {
 		'pfund_paypal_options',
 		array(
 			'name' => 'paypal_pdt_token',
-			'value' => $options['paypal_pdt_token']
+			'value' => pfund_get_value( $options, 'paypal_pdt_token' )
 		)
 	);
 	$paypal_sandbox = pfund_get_value( $options , 'paypal_sandbox',  false );
@@ -197,7 +197,7 @@ function pfund_admin_init() {
 		'pfund_mailchimp_options',
 		array(
 			'name' => 'mc_api_key',
-			'value' => $options['mc_api_key']
+			'value' => pfund_get_value( $options, 'mc_api_key' )
 		)
 	);
 
@@ -209,7 +209,7 @@ function pfund_admin_init() {
 		'pfund_mailchimp_options',
 		array(
 			'name' => 'mc_email_publish_id',
-			'value' => $options['mc_email_publish_id']
+			'value' => pfund_get_value( $options, 'mc_email_publish_id' )
 		)
 	);
 	add_settings_field(
@@ -220,7 +220,7 @@ function pfund_admin_init() {
 		'pfund_mailchimp_options',
 		array(
 			'name' => 'mc_email_donate_id',
-			'value' => $options['mc_email_donate_id']
+			'value' => pfund_get_value( $options, 'mc_email_donate_id' )
 		)
 	);
 	add_settings_field(
@@ -231,7 +231,7 @@ function pfund_admin_init() {
 		'pfund_mailchimp_options',
 		array(
 			'name' => 'mc_email_goal_id',
-			'value' => $options['mc_email_goal_id']
+			'value' => pfund_get_value( $options, 'mc_email_goal_id' )
 		)
 	);
 	add_settings_section(
@@ -266,7 +266,7 @@ function pfund_admin_setup() {
  * @param mixed $post The campaign to display meta fields for.
  */
 function pfund_campaign_meta( $post ) {
-?>
+?>	
 	<ul>
 		<?php echo pfund_render_fields( $post->ID, $post->post_title ); ?>
 	</ul>
@@ -390,25 +390,25 @@ function pfund_field_section_text() {
  * @param mixed $post the post object containing the campaign
  */
 function pfund_handle_publish( $post_id, $post ) {
-	$author_data = get_userdata($post->post_author);
-	
-	$campaignUrl = get_permalink( $post );
-	if ( apply_filters ('pfund_mail_on_publish', true, $post, $author_data, $campaignUrl ) ) {
+	$sent_mail = get_post_meta( $post_id, '_pfund_emailed_published', true );
+	if ( apply_filters( 'pfund_mail_on_publish', true, $post, $author_data, $campaignUrl ) && empty( $sent_mail ) ) {
 		$options = get_option( 'pfund_options' );
+		$author_data = pfund_get_contact_info( $post, $options );
+		$campaignUrl = get_permalink( $post );
 		if ( $options['mailchimp'] ) {
 			$merge_vars = array(
-				'FNAME'=> $author_data->first_name,
-				'LNAME'=> $author_data->last_name,
+				'NAME'=>$author_data->display_name,
 				'CAMP_TITLE'=> $post->post_title,
 				'CAMP_URL'=> $campaignUrl
 			);
-			pfund_send_mc_email($author_data->user_email, $merge_vars, $options['mc_email_publish_id']);
+			pfund_send_mc_email( $author_data->user_email, $merge_vars, $options['mc_email_publish_id'] );
 		} else {
-			$pub_message = sprintf(__( 'Dear %s,', 'pfund' ), $author_data->first_name).PHP_EOL;
-			$pub_message .= sprintf(__( 'Your campaign, %s has been approved.', 'pfund' ), $post->post_title).PHP_EOL;
-			$pub_message .= sprintf(__( 'You can view your campaign at: %s.', 'pfund' ), $campaignUrl ).PHP_EOL;
-			wp_mail($author_data->user_email, __( 'Your campaign has been approved', 'pfund' ) , $pub_message);
+			$pub_message = sprintf( __( 'Dear %s,', 'pfund' ), $author_data->display_name ).PHP_EOL;
+			$pub_message .= sprintf( __( 'Your campaign, %s has been approved.', 'pfund' ), $post->post_title).PHP_EOL;
+			$pub_message .= sprintf( __( 'You can view your campaign at: %s.', 'pfund' ), $campaignUrl ).PHP_EOL;
+			wp_mail( $author_data->user_email, __( 'Your campaign has been approved', 'pfund' ) , $pub_message );
 		}
+		add_post_meta( $post_id, '_pfund_emailed_published', true );
 	}
 }
 

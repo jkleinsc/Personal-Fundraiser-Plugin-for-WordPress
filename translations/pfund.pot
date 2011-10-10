@@ -5,10 +5,10 @@
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: Personal Fundraiser 0.7.2\n"
+"Project-Id-Version: Personal Fundraiser 0.7.3\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2011-08-19 11:32-0500\n"
-"PO-Revision-Date: 2011-08-19 11:32-0500\n"
+"POT-Creation-Date: 2011-10-10 16:11-0500\n"
+"PO-Revision-Date: 2011-10-10 16:11-0500\n"
 "Last-Translator: John Kleinschmidt <jk@cure.org>\n"
 "Language-Team: CURE International <info@cure.org>\n"
 "Language: \n"
@@ -118,7 +118,7 @@ msgid "Personal Fundraising fields"
 msgstr ""
 
 #: includes/admin.php:282
-#: includes/setup.php:260
+#: includes/setup.php:309
 msgid "Cause"
 msgstr ""
 
@@ -152,26 +152,26 @@ msgstr ""
 msgid "Define your fields for personal fundraisers"
 msgstr ""
 
-#: includes/admin.php:407
-#: includes/user.php:573
-#: includes/user.php:632
+#: includes/admin.php:406
+#: includes/user.php:659
+#: includes/user.php:717
 #, php-format
 msgid "Dear %s,"
 msgstr ""
 
-#: includes/admin.php:408
+#: includes/admin.php:407
 #, php-format
 msgid "Your campaign, %s has been approved."
 msgstr ""
 
-#: includes/admin.php:409
-#: includes/user.php:591
-#: includes/user.php:637
+#: includes/admin.php:408
+#: includes/user.php:677
+#: includes/user.php:722
 #, php-format
 msgid "You can view your campaign at: %s."
 msgstr ""
 
-#: includes/admin.php:410
+#: includes/admin.php:409
 msgid "Your campaign has been approved"
 msgstr ""
 
@@ -283,7 +283,7 @@ msgid "Total Raised"
 msgstr ""
 
 #: includes/admin.php:691
-#: includes/user.php:368
+#: includes/user.php:451
 msgid "Edit"
 msgstr ""
 
@@ -332,263 +332,291 @@ msgstr ""
 msgid "Campaign Listing"
 msgstr ""
 
-#: includes/setup.php:257
-#: includes/setup.php:259
-msgid "Causes"
-msgstr ""
-
-#: includes/setup.php:261
-#: includes/setup.php:262
-msgid "Add New Cause"
-msgstr ""
-
 #: includes/setup.php:263
-msgid "Edit Cause"
+msgid "funding goal"
 msgstr ""
 
 #: includes/setup.php:264
-msgid "View Cause"
+msgid "raised"
 msgstr ""
 
 #: includes/setup.php:265
-msgid "Search Causes"
+msgid "givers"
 msgstr ""
 
 #: includes/setup.php:266
+msgid "days left"
+msgstr ""
+
+#: includes/setup.php:269
+msgid "I have an event on [pfund-end-date] that I am involved with for my cause."
+msgstr ""
+
+#: includes/setup.php:270
+msgid "I am hoping to raise $[pfund-gift-goal] for my cause."
+msgstr ""
+
+#: includes/setup.php:271
+msgid "So far I have raised $[pfund-gift-tally].  If you would like to contribute to my cause, click on the donate button below:"
+msgstr ""
+
+#: includes/setup.php:278
+msgid "Help Raise Money For My Cause"
+msgstr ""
+
+#: includes/setup.php:306
+#: includes/setup.php:308
+msgid "Causes"
+msgstr ""
+
+#: includes/setup.php:310
+#: includes/setup.php:311
+msgid "Add New Cause"
+msgstr ""
+
+#: includes/setup.php:312
+msgid "Edit Cause"
+msgstr ""
+
+#: includes/setup.php:313
+msgid "View Cause"
+msgstr ""
+
+#: includes/setup.php:314
+msgid "Search Causes"
+msgstr ""
+
+#: includes/setup.php:315
 msgid "No Causes Found"
 msgstr ""
 
-#: includes/setup.php:267
+#: includes/setup.php:316
 msgid "No Causes Found In Trash"
 msgstr ""
 
-#: includes/setup.php:281
-#: includes/setup.php:283
+#: includes/setup.php:330
+#: includes/setup.php:332
 msgid "Campaigns"
 msgstr ""
 
-#: includes/setup.php:284
+#: includes/setup.php:333
 msgid "Campaign"
 msgstr ""
 
-#: includes/setup.php:285
-#: includes/setup.php:286
+#: includes/setup.php:334
+#: includes/setup.php:335
 msgid "Add New Campaign"
 msgstr ""
 
-#: includes/setup.php:287
+#: includes/setup.php:336
 msgid "Edit Campaign"
 msgstr ""
 
-#: includes/setup.php:288
+#: includes/setup.php:337
 msgid "View Campaign"
 msgstr ""
 
-#: includes/setup.php:289
+#: includes/setup.php:338
 msgid "Search Campaigns"
 msgstr ""
 
-#: includes/setup.php:290
+#: includes/setup.php:339
 msgid "No Campaigns Found"
 msgstr ""
 
-#: includes/setup.php:291
+#: includes/setup.php:340
 msgid "No Campaigns Found In Trash"
 msgstr ""
 
-#: includes/user.php:92
-msgid "Create My Page"
-msgstr ""
-
-#: includes/user.php:134
-msgid "Post a Comment"
-msgstr ""
-
-#: includes/user.php:140
-#, php-format
-msgid "You must be <a href=\"%s\">logged in</a> to post a comment."
-msgstr ""
-
-#: includes/user.php:148
-msgid "Name"
-msgstr ""
-
-#: includes/user.php:150
-msgid "Mail (will not be published)"
-msgstr ""
-
-#: includes/user.php:212
-msgid "Cancel"
-msgstr ""
-
-#: includes/user.php:213
-msgid "This email address is already registered"
-msgstr ""
-
-#: includes/user.php:214
-msgid "Invalid email address"
-msgstr ""
-
-#: includes/user.php:215
-#: includes/user.php:1103
-msgid "Mask password"
-msgstr ""
-
-#: includes/user.php:216
-msgid "Ok"
-msgstr ""
-
-#: includes/user.php:217
-msgid "Register"
-msgstr ""
-
-#: includes/user.php:218
-#, php-format
-msgid "<strong>ERROR</strong>: Couldn&#8217;t register you.  Please contact <a href=\"mailto:%s\">us</a>."
-msgstr ""
-
-#: includes/user.php:219
-msgid "Please wait while your registration is processed."
-msgstr ""
-
-#: includes/user.php:220
-msgid "Your campaign has not been saved.  If you would like to save your campaign, stay on this page, click on the Edit button and then click on the Ok button."
-msgstr ""
-
-#: includes/user.php:221
-msgid "Unmask password"
-msgstr ""
-
-#: includes/user.php:222
-msgid "This username is already registered"
-msgstr ""
-
-#: includes/user.php:280
-msgid "Anonymous gift"
-msgstr ""
-
-#: includes/user.php:360
-msgid "Please wait while we validate this location"
-msgstr ""
-
-#: includes/user.php:361
-msgid "* This location is already taken"
-msgstr ""
-
-#: includes/user.php:520
-msgid "met"
-msgstr ""
-
-#: includes/user.php:524
-msgid "needed"
-msgstr ""
-
-#: includes/user.php:575
-#, php-format
-msgid "An anonymous gift of %s%d has been received for your campaign, %s."
-msgstr ""
-
-#: includes/user.php:580
-#, php-format
-msgid "%s %s donated %s%d to your campaign, %s."
-msgstr ""
-
-#: includes/user.php:586
-#, php-format
-msgid "If you would like to thank %s, you can email %s at %s."
-msgstr ""
-
-#: includes/user.php:592
-#: includes/user.php:638
-msgid "A donation has been received "
-msgstr ""
-
-#: includes/user.php:634
-#, php-format
-msgid "Congratulations!  Your campaign goal of %s has been met!"
-msgstr ""
-
-#: includes/user.php:670
-msgid "Campaign List"
-msgstr ""
-
-#: includes/user.php:683
-msgid "Cause List"
-msgstr ""
-
-#: includes/user.php:958
+#: includes/user.php:68
 #, php-format
 msgid "An anonymous gift of %s%d was received."
 msgstr ""
 
-#: includes/user.php:970
+#: includes/user.php:80
 #, php-format
 msgid "%s %s donated %s%d."
 msgstr ""
 
-#: includes/user.php:1049
-msgid "Campaign added"
+#: includes/user.php:175
+msgid "Create My Page"
 msgstr ""
 
-#: includes/user.php:1051
+#: includes/user.php:217
+msgid "Post a Comment"
+msgstr ""
+
+#: includes/user.php:223
+#, php-format
+msgid "You must be <a href=\"%s\">logged in</a> to post a comment."
+msgstr ""
+
+#: includes/user.php:231
+msgid "Name"
+msgstr ""
+
+#: includes/user.php:233
+msgid "Mail (will not be published)"
+msgstr ""
+
+#: includes/user.php:295
+msgid "Cancel"
+msgstr ""
+
+#: includes/user.php:296
+msgid "This email address is already registered"
+msgstr ""
+
+#: includes/user.php:297
+msgid "Invalid email address"
+msgstr ""
+
+#: includes/user.php:298
+#: includes/user.php:1158
+msgid "Mask password"
+msgstr ""
+
+#: includes/user.php:299
+msgid "Ok"
+msgstr ""
+
+#: includes/user.php:300
+msgid "Register"
+msgstr ""
+
+#: includes/user.php:301
+#, php-format
+msgid "<strong>ERROR</strong>: Couldn&#8217;t register you.  Please contact <a href=\"mailto:%s\">us</a>."
+msgstr ""
+
+#: includes/user.php:302
+msgid "Please wait while your registration is processed."
+msgstr ""
+
+#: includes/user.php:303
+msgid "Your campaign has not been saved.  If you would like to save your campaign, stay on this page, click on the Edit button and then click on the Ok button."
+msgstr ""
+
+#: includes/user.php:304
+msgid "Unmask password"
+msgstr ""
+
+#: includes/user.php:305
+msgid "This username is already registered"
+msgstr ""
+
+#: includes/user.php:363
+msgid "Anonymous gift"
+msgstr ""
+
+#: includes/user.php:443
+msgid "Please wait while we validate this location"
+msgstr ""
+
+#: includes/user.php:444
+msgid "* This location is already taken"
+msgstr ""
+
+#: includes/user.php:608
+msgid "met"
+msgstr ""
+
+#: includes/user.php:612
+msgid "needed"
+msgstr ""
+
+#: includes/user.php:661
+#, php-format
+msgid "An anonymous gift of %s%d has been received for your campaign, %s."
+msgstr ""
+
+#: includes/user.php:666
+#, php-format
+msgid "%s %s donated %s%d to your campaign, %s."
+msgstr ""
+
+#: includes/user.php:672
+#, php-format
+msgid "If you would like to thank %s, you can email %s at %s."
+msgstr ""
+
+#: includes/user.php:678
+#: includes/user.php:723
+msgid "A donation has been received "
+msgstr ""
+
+#: includes/user.php:719
+#, php-format
+msgid "Congratulations!  Your campaign goal of %s has been met!"
+msgstr ""
+
+#: includes/user.php:755
+msgid "Campaign List"
+msgstr ""
+
+#: includes/user.php:768
+msgid "Cause List"
+msgstr ""
+
+#: includes/user.php:864
+msgid "Thank you for your donation!"
+msgstr ""
+
+#: includes/user.php:1106
 #, php-format
 msgid "Your campaign has been created and is now available for public viewing at <a href=\"%s\">%s</a>."
 msgstr ""
 
-#: includes/user.php:1053
+#: includes/user.php:1108
 msgid "Your campaign has been created and submitted for approval.  Once your campaign has been approved you will receive an email notifying you."
 msgstr ""
 
-#: includes/user.php:1055
+#: includes/user.php:1110
 #, php-format
 msgid "Your campaign has been created. %s"
 msgstr ""
 
-#: includes/user.php:1063
-msgid "Campaign updated"
-msgstr ""
-
-#: includes/user.php:1065
+#: includes/user.php:1120
 #, php-format
 msgid "Your campaign has been updated and is available for public viewing at <a href=\"%s\">%s</a>."
 msgstr ""
 
-#: includes/user.php:1067
+#: includes/user.php:1122
 #, php-format
 msgid "Your campaign has been updated and submitted for approval.  Once your campaign has been approved you will receive an email notifying you.  Until then you can access your campaign at: <a href=\"%s\">%s</a>"
 msgstr ""
 
-#: includes/user.php:1069
+#: includes/user.php:1124
 #, php-format
 msgid "Your campaign has been updated.  %s"
 msgstr ""
 
-#: includes/user.php:1094
+#: includes/user.php:1149
 #, php-format
 msgid "To make this campaign available for others to view, please <a href=\"%s\">Login</a> or <a id=\"pfund-register-link\" href=\"#\">Register</a>."
 msgstr ""
 
-#: includes/user.php:1100
+#: includes/user.php:1155
 msgid "Username"
 msgstr ""
 
-#: includes/user.php:1105
+#: includes/user.php:1160
 msgid "Password"
 msgstr ""
 
-#: includes/user.php:1111
+#: includes/user.php:1166
 msgid "Email"
 msgstr ""
 
-#: includes/user.php:1116
+#: includes/user.php:1171
 msgid "First Name"
 msgstr ""
 
-#: includes/user.php:1121
+#: includes/user.php:1176
 msgid "Last Name"
 msgstr ""
 
-#: includes/user.php:1134
+#: includes/user.php:1189
 #, php-format
 msgid "To make this campaign available for others to view, please <a href=\"%s\">Login</a>."
 msgstr ""

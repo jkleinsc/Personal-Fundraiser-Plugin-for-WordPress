@@ -34,7 +34,7 @@ function pfund_activate() {
 				'date_format' => 'm/d/y',
 				'login_required' => true,
 				'mailchimp' => false,
-				'submit_role' => array( 'subscriber' ),
+				'submit_role' => array( 'administrator' ),
 				'fields' => array(
 					'camp-title' => array(
 						'label' => __( 'Title', 'pfund' ),
@@ -120,8 +120,31 @@ function pfund_activate() {
 			);
 			$options_changed = true;
 		}
-		if ( ! isset( $pfund_options['version'] ) ||
-				$pfund_options['version'] != PFUND_VERSION ) {
+
+		if ( isset( $pfund_options['version'] ) ) {
+			$old_version = 	$pfund_options['version'];
+		} else {
+			$old_version = 	'0.7';
+		}
+
+		if ( version_compare( $old_version, '0.7.3', '<' ) ) {
+			_pfund_add_sample_cause();
+			if ( ! in_array( 'administrator', $pfund_options['submit_role'] ) ) {
+				$pfund_options['submit_role'][] = 'administrator';
+				$options_changed = true;
+			}
+		}
+
+		if ( empty( $pfund_options['paypal_donate_btn'] ) ) {
+			$sample_btn = '<form action="" method="post">';
+			$sample_btn .= '<input type="image" src="https://www.paypalobjects.com/en_US/i/btn/btn_donateCC_LG.gif" border="0" name="submit" alt="PayPal - The safer, easier way to pay online!" onclick="alert(\'This is a test button.  Please view the readme to setup your PayPal donate button.\');return false;">';
+			$sample_btn .= '<img alt="" border="0" src="https://www.paypalobjects.com/en_US/i/scr/pixel.gif" width="1" height="1">';
+			$sample_btn .= '</form>';
+			$pfund_options['paypal_donate_btn'] = $sample_btn;
+			$options_changed = true;
+		}
+
+		if ( $old_version != PFUND_VERSION ) {
 			$pfund_options['version'] = PFUND_VERSION;
 			$options_changed = true;
 		}
@@ -235,10 +258,39 @@ function pfund_update_options( $oldvalue, $newvalue ) {
 }
 
 /**
+ * Adds a sample cause for plugin demonstration purposes.
+ */
+function _pfund_add_sample_cause() {
+	$stat_li = '<li class="pfund-stat"><span class="highlight">%s</span>%s</li>';
+	$sample_content = '<ul>';
+	$sample_content .= sprintf( $stat_li, '$[pfund-gift-goal]', __( 'funding goal', 'pfund' ) );
+	$sample_content .= sprintf( $stat_li, '$[pfund-gift-tally]', __( 'raised', 'pfund' ) );
+	$sample_content .= sprintf( $stat_li, '[pfund-giver-tally]', __( 'givers', 'pfund' ) );
+	$sample_content .= sprintf( $stat_li, '[pfund-days-left]', __( 'days left', 'pfund' ) );
+	$sample_content .= '</ul>';
+	$sample_content .= '<div style="clear: both;">';
+	$sample_content .= '	<p>'.__( 'I have an event on [pfund-end-date] that I am involved with for my cause.', 'pfund' ).'</p>';
+	$sample_content .= '	<p>'.__( 'I am hoping to raise $[pfund-gift-goal] for my cause.', 'pfund' ).'</p>';
+	$sample_content .= '	<p>'.__( 'So far I have raised $[pfund-gift-tally].  If you would like to contribute to my cause, click on the donate button below:', 'pfund' ).'</p>';
+	$sample_content .= '	<p>[pfund-donate]<p>';
+	$sample_content .= '</div>';
+	$sample_content .= '[pfund-edit]';
+		
+	$cause = array(
+		'post_name' => 'sample-cause',
+		'post_title' => __( 'Help Raise Money For My Cause', 'pfund' ),
+		'post_content' => $sample_content,
+		'post_status' => 'publish',
+		'post_type' => 'pfund_cause'
+	);
+	$cause_root_id = wp_insert_post( $cause );
+}
+
+/**
  * Loads the translation file; fired from init action.
  */
 function _pfund_load_translation_file() {
-	load_plugin_textdomain( 'pfund', false, PFUND_FOLDER . '/translations' );
+	load_plugin_textdomain( 'pfund', false, PFUND_FOLDER . 'translations' );
 }
 
 /**

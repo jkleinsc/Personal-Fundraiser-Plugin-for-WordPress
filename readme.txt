@@ -21,6 +21,7 @@ All donations for this plugin go to provide life-changing surgery for children i
 1. Upload the plugin to your plugins directory and activate.
 1. Check the settings by clicking on the Personal Fundraiser admin menu item.
 1. Define the Personal Fundraiser Fields that users will fill out when creating a personal fundraiser campaign.
+1. Edit/View the sample cause **Help Raise Money For My Cause** to see a sample cause.
 1. Create a new Cause from the Causes admin menu using the shortcode **[pfund-edit]** as well as the shortcode from the Personal Fundraiser settings.
 1. Navigate to /`<CAUSE SLUG>` to see the list of available causes to create campaigns from.
 
@@ -77,19 +78,16 @@ Each of the fields defined in the Personal Fundraiser Fields section of the Pers
 * **MailChimp Options** This plugin provides the ability to send transactional emails through MailChimp.  The transactional emails must be created using MailChimp's <a href="http://apidocs.mailchimp.com/api/">API</a>.
 * **MailChimp API key** MailChimp API key needed to send emails via MailChimp.  This API key can be obtained by going to: <a href="http://admin.mailchimp.com/account/api-key-popup">API Key</a>.
 * **Campaign Approval Email ID**  The MailChimp campaign id of the transactional campaign to use to send campaign approved emails.  The following merge fields are passed:
-    * **FNAME** The first name of the user who created the campaign.  
-    * **LNAME**  The last name of the user who created the campaign.
+    * **NAME** The display name of the user who created the campaign.
     * **CAMP_TITLE** The title of the campaign.
     * **CAMP_URL** The URL for the campaign.
 * **Campaign Donation Email ID** The MailChimp campaign id of the transactional campaign to use to send campaign donation emails.  The following merge fields are passed:
-    * **FNAME** The first name of the user who created the campaign.  
-    * **LNAME**  The last name of the user who created the campaign.
+    * **NAME** The display name of the user who created the campaign.
     * **CAMP_TITLE** The title of the campaign.
     * **CAMP_URL** The URL for the campaign.
     * **DONATE_AMT** The amount donated.
 * **Goal Reached Email ID** The MailChimp campaign id of the transactional campaign to use to send an email when the campaign goal is reached.  The following merge fields are passed:
-    * **FNAME** The first name of the user who created the campaign.  
-    * **LNAME**  The last name of the user who created the campaign.
+    * **NAME** The display name of the user who created the campaign.
     * **CAMP_TITLE** The title of the campaign.
     * **CAMP_URL** The URL for the campaign.
     * **GOAL_AMT** The goal that was reached.
@@ -152,6 +150,19 @@ If you are using PayPal's developer sandbox for testing, check this checkbox; ot
 2. Optional user registration.
 
 == Changelog ==
+
+= 0.7.3 =
+
+* Fixed DateTime issue with certain versions of PHP.
+* Fixed issue with published email being sent every time an administrator updates a campaign.
+* Added logic to send emails using the proper contact information for a campaign.  If the campaign has a user display name and user email field, use those values instead of the post author's contact information.  This is necessary for use cases where the campaign is created by an administrator, but the notifications should be sent to another contact.
+* Added action, pfund-add-gift, to allow gifts from other ecommerce solutions to be processed.
+* Fixed donate button and giver tally to display on campaign creation screen.
+* Added a thank you popup when a donation is received.
+* Added formatting to dollar amounts when displayed.
+* Changed default user role required to create campaigns to administrator.
+* Mailchimp integration now uses display name vs first name and last name.
+* Added sample cause and sample PayPal donate button for demonstration purposes.
 
 = 0.7.2 =
 

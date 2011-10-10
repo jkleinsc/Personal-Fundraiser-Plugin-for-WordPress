@@ -36,6 +36,7 @@ define( 'PFUND_PAYPAL_SANDBOX_URL', 'https://www.sandbox.paypal.com/cgi-bin/webs
  *	 error_msg -- Text message describing error encountered.
  */
 function pfund_process_paypal_pdt() {
+	error_log("in pfund_process_paypal_pdt");
 	$return_array = array( 'success' => false );
 	try {
 		$options = get_option( 'pfund_options' );
@@ -122,6 +123,7 @@ function pfund_process_paypal_ipn() {
  * the transaction.
  */
 function _pfund_map_paypal_fields( $paypal_response, $return_array ) {
+	error_log("Got response from paypal:".print_r($paypal_response));
 	$return_array['amount'] = $paypal_response['mc_gross'];
 	$return_array['donor_first_name'] = $paypal_response['first_name'];
 	$return_array['donor_last_name'] = $paypal_response['last_name'];

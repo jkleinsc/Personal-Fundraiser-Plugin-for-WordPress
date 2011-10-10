@@ -22,7 +22,7 @@
  * @return string date in iso8601 format.
  */
 function pfund_date_to_iso8601( $date, $format ) {
-	if( class_exists( 'DateTime' ) ) {
+	if( class_exists( 'DateTime' ) && method_exists( 'DateTime', 'createFromFormat' ) ) {
 		$date = DateTime::createFromFormat( $format, $date );
 		if ( $date ) {
 			return $date->format( 'Y-m-d' );
@@ -114,7 +114,7 @@ function pfund_determine_shortcode( $id, $type = '' ) {
  * campaign; otherwise return the content unmodified.
  */
 function pfund_handle_content( $content ) {
-	global $post, $pfund_update_message;	
+	global $post, $pfund_update_message;
 	if( $post->ID == null || ! pfund_is_pfund_post() ) {
 		return $content;
 	} else if ( $post->post_type == 'pfund_campaign' ) {
@@ -517,7 +517,48 @@ function pfund_format_date( $date, $format ) {
 	return gmdate( $format, strtotime( $date ) );
 }
 
-
+/**
+ * Determine the proper contact information for the specified campaign.  If the
+ * campaign has a user display name and user email field, use those values instead
+ * of the post author's contact information.  This function is necessary for use
+ * cases where the campaign is created by an administrator, but the notifications
+ * should be sent to another contact.
+ * @param <mixed> $post The post representing the campaign to get the contact
+ * information for
+ * @param <mixed> $options The current personal fundraiser options.
+ * @return <mixed> a WP_User object containing the contact information for
+ * the specified campaign.
+ */
+function pfund_get_contact_info( $post, $options = array() ) {
+	$metavalues = get_post_custom( $post->ID );
+	$contact_email = null;
+	$contact_name = null;
+	foreach( $metavalues as $metakey => $metavalue ) {
+		$field_id = substr( $metakey , 7);
+		$field_info = $options['fields'][$field_id];
+		if ( ! empty( $field_info )  && ! empty( $metavalue[0] ) ) {
+			switch( $field_info['type'] ) {
+				case 'user_email':
+					$contact_email = $metavalue[0];
+					break;
+				case 'user_displayname':
+					$contact_name = $metavalue[0];
+					break;
+			}
+			if ( isset( $contact_email ) && isset( $contact_name ) ) {
+				break;
+			}
+		}
+	}
+	$contact_data = clone get_userdata($post->post_author);
+	if ( isset( $contact_email ) && isset( $contact_name ) &&
+			$contact_data->user_email != $contact_email ) {
+		$contact_data->user_email = $contact_email;
+		$contact_data->display_name = $contact_name;
+		$contact_data->ID = -1;
+	}
+	return $contact_data;
+}
 
 /**
  * Utility function to get value from array.  If the value doesn't exist,

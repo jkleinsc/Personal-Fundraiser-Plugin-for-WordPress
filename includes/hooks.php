@@ -16,9 +16,9 @@
 */
 
 //Activation of plugin
-register_activation_hook( PFUND_FOLDER . '/personal-fundraiser.php', 'pfund_activate' );
+register_activation_hook( PFUND_FOLDER . 'personal-fundraiser.php', 'pfund_activate' );
 //Deactivation of plugin
-//register_deactivation_hook( PFUND_FOLDER . '/personal-fundraiser.php', 'pfund_deactivate' );
+//register_deactivation_hook( PFUND_FOLDER . 'personal-fundraiser.php', 'pfund_deactivate' );
 
 // Make sure everything is set after upgrade.
 add_filter( 'upgrader_post_install', 'pfund_activate' );
@@ -52,6 +52,8 @@ if ( is_admin() ) {
 }
 
 add_action( 'map_meta_cap', 'pfund_restrict_edit', 10, 4 );
+
+add_action( 'pfund-add-gift', 'pfund_add_gift', 10, 2 );
 
 add_action( 'pfund-processed-transaction', 'pfund_send_donate_email', 10, 2 );
 
