@@ -151,6 +151,10 @@ If you are using PayPal's developer sandbox for testing, check this checkbox; ot
 
 == Changelog ==
 
+= 0.7.4 =
+
+* Removed debugging information when processing PayPal transaction.
+
 = 0.7.3 =
 
 * Fixed DateTime issue with certain versions of PHP.

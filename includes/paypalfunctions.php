@@ -123,7 +123,6 @@ function pfund_process_paypal_ipn() {
  * the transaction.
  */
 function _pfund_map_paypal_fields( $paypal_response, $return_array ) {
-	error_log("Got response from paypal:".print_r($paypal_response));
 	$return_array['amount'] = $paypal_response['mc_gross'];
 	$return_array['donor_first_name'] = $paypal_response['first_name'];
 	$return_array['donor_last_name'] = $paypal_response['last_name'];
