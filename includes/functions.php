@@ -162,22 +162,16 @@ function pfund_is_pfund_post( $post_to_check = false, $include_lists = false ) {
  */
 function pfund_render_fields( $postid, $campaign_title, $editing_campaign = true ) {
 	global $current_user, $post;
-
-	$metavalues = array();
-	if ( isset(  $postid ) ) {
-		$metavalues = get_post_custom( $postid );
-	}
-
 	$options = get_option( 'pfund_options' );
 	$inputfields = array();
 	if ( is_admin() ) {
 		$render_type = 'admin';
 		if ( isset( $options['fields'] ) ) {
 			foreach ( $options['fields'] as $field_id => $field ) {
-				$field_values = pfund_get_value( $metavalues, '_pfund_'.$field_id, array( '' ) );
+				$field_value = get_post_meta( $postid, '_pfund_'.$field_id, true );
 				$inputfields['pfund-'.$field_id] = array(
 					'field' => $field,
-					'value' => $field_values[0]
+					'value' => $field_value
 				);
 			}
 		}
@@ -192,12 +186,12 @@ function pfund_render_fields( $postid, $campaign_title, $editing_campaign = true
 		$inputfields = array();
 		foreach( $tags as $idx => $tag ) {
 			$field_id = substr( $tag, 6 );			
-			$field_values = pfund_get_value( $metavalues, '_pfund_'.$field_id, array( '' ) );
+			$field_value = get_post_meta( $postid, '_pfund_'.$field_id, true );
 			if ( isset( $options['fields'][$field_id] ) ) {
 				$inputfields[$tag] = array(
 					'field' => $options['fields'][$field_id],
 					'attrs' => $attrs[$idx],
-					'value' => $field_values[0]
+					'value' => $field_value
 				);
 			}
 		}
@@ -217,19 +211,19 @@ function pfund_render_fields( $postid, $campaign_title, $editing_campaign = true
 		);
 	}
 
-	$current_goal = pfund_get_value($metavalues, '_pfund_gift-goal', array('' ) );
+	$current_goal = get_post_meta( $postid, '_pfund_gift-goal', true );
 	if ( ! isset( $inputfields['pfund-gift-goal'] ) ) {
 		$inputfields['pfund-gift-goal'] = array(
 			'field' => $options['fields']['gift-goal'],
-			'value' => $current_goal[0]
+			'value' => $current_goal
 		);
 	}
 
-	$current_tally = pfund_get_value($metavalues, '_pfund_gift-tally', array('' ) );
+	$current_tally = get_post_meta( $postid, '_pfund_gift-tally', true );
 	if ( ! isset( $inputfields['pfund-gift-tally'] ) ) {
 		$inputfields['pfund-gift-tally'] = array(
 			'field' => $options['fields']['gift-tally'],
-			'value' => $current_tally[0]
+			'value' => $current_tally
 		);
 	}
 
@@ -303,7 +297,7 @@ function pfund_render_fields( $postid, $campaign_title, $editing_campaign = true
 				break;
 			case 'textarea':
 				$field_content = '<textarea class="pfund-textarea" id="'.$tag.'" name="'.$tag.'" rows="10" cols="50">'.$value.'</textarea>';
-				$content .= _pfund_render_field_list_item( $field_options, $field_content );
+				$content .= pfund_render_field_list_item( $field_content, $field_options);
 				$field_idx++;
 				break;
 			case 'image':
@@ -312,7 +306,7 @@ function pfund_render_fields( $postid, $campaign_title, $editing_campaign = true
 				break;
 			case 'select':
 				$field_content = pfund_render_select_field( $field['data'], $tag, $value );
-				$content .= _pfund_render_field_list_item( $field_options, $field_content );
+				$content .= pfund_render_field_list_item( $field_content, $field_options );
 				$field_idx++;
 				break;
 			case 'user_email':
@@ -332,6 +326,9 @@ function pfund_render_fields( $postid, $campaign_title, $editing_campaign = true
 				$content .= _pfund_render_text_field( $field_options );
 				$field_idx++;
 				break;
+			default:
+				$content .= apply_filters( 'pfund_'.$field['type'].'_input', $field_options );
+				$field_idx++;
 		}
 	}
 	if ( ! is_admin() ) {
@@ -417,7 +414,12 @@ function pfund_save_campaign_fields( $campid ) {
 					break;
 				default:
 					if ( isset( $_REQUEST[$fieldname] ) ) {
-						update_post_meta( $campid, "_pfund_".$field_id, strip_tags( $_REQUEST[$fieldname] ) );
+						if ( is_array( $_REQUEST[$fieldname] ) ) {
+							$value_to_save = $_REQUEST[$fieldname];
+						} else {
+							$value_to_save = strip_tags( $_REQUEST[$fieldname] );
+						}
+						update_post_meta( $campid, "_pfund_".$field_id, $value_to_save );
 					}
 					break;
 			}
@@ -489,7 +491,7 @@ function pfund_send_mc_email($email, $merge_vars, $campId, $listId='', $email_ty
  */
 function _pfund_attach_uploaded_image( $fieldname, $postid, $metaname ) {
 	if( isset( $_FILES[$fieldname] ) && is_uploaded_file( $_FILES[$fieldname]['tmp_name'] ) ) {
-		$data = media_handle_upload( $fieldname, $post_id, array( 'post_status' => 'private' ) );
+		$data = media_handle_upload( $fieldname, $postid, array( 'post_status' => 'private' ) );
 		if( is_wp_error( $data ) ) {
 			$errors[] = $data;
 			error_log("error adding image for personal fundraising:".print_r( $data, true ) );
@@ -534,19 +536,23 @@ function pfund_get_contact_info( $post, $options = array() ) {
 	$contact_email = null;
 	$contact_name = null;
 	foreach( $metavalues as $metakey => $metavalue ) {
-		$field_id = substr( $metakey , 7);
-		$field_info = $options['fields'][$field_id];
-		if ( ! empty( $field_info )  && ! empty( $metavalue[0] ) ) {
-			switch( $field_info['type'] ) {
-				case 'user_email':
-					$contact_email = $metavalue[0];
-					break;
-				case 'user_displayname':
-					$contact_name = $metavalue[0];
-					break;
-			}
-			if ( isset( $contact_email ) && isset( $contact_name ) ) {
-				break;
+		if ( strpos( $metakey, "_pfund_" ) === 0 ) {
+			$field_id = substr( $metakey , 7);
+			if ( isset($options['fields'][$field_id]) ) {
+				$field_info = $options['fields'][$field_id];
+				if ( ! empty( $field_info )  && ! empty( $metavalue[0] ) ) {
+					switch( $field_info['type'] ) {
+						case 'user_email':
+							$contact_email = $metavalue[0];
+							break;
+						case 'user_displayname':
+							$contact_name = $metavalue[0];
+							break;
+					}
+					if ( isset( $contact_email ) && isset( $contact_name ) ) {
+						break;
+					}
+				}
 			}
 		}
 	}
@@ -580,11 +586,11 @@ function pfund_get_value( $array, $key, $default = '' ) {
 
 /**
  * Render the field using the specified render type.
+ * @param string $field_contents actual input field to render.*
  * @param array $field_options named options for field.
- * @param string $field_contents actual input field to render.
  * @return string the rendered HTML.
  */
-function _pfund_render_field_list_item( $field_options, $field_contents ) {
+function pfund_render_field_list_item( $field_contents, $field_options ) {
 	$content = '<li>';
 	$content .= '	<label for="'.$field_options['name'].'">'.$field_options['label'];
 	if ( isset( $field_options['required'] ) && $field_options['required'] ) {
@@ -664,7 +670,7 @@ function _pfund_render_text_field( $field_options = '') {
 	if ( isset( $field_options['additional_content'] ) ) {
 		$content .= $field_options['additional_content'];
 	}
-	return _pfund_render_field_list_item( $field_options, $content);
+	return pfund_render_field_list_item( $content, $field_options );
 }
 
 /**

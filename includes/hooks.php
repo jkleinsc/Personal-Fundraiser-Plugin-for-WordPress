@@ -53,11 +53,13 @@ if ( is_admin() ) {
 
 add_action( 'map_meta_cap', 'pfund_restrict_edit', 10, 4 );
 
-add_action( 'pfund-add-gift', 'pfund_add_gift', 10, 2 );
+add_action( 'pfund_add_gift', 'pfund_add_gift', 10, 2 );
 
-add_action( 'pfund-processed-transaction', 'pfund_send_donate_email', 10, 2 );
+add_action( 'pfund_processed_transaction', 'pfund_send_donate_email', 10, 2 );
 
-add_action( 'pfund-reached-user-goal', 'pfund_send_goal_reached_email', 10, 3 );
+add_action( 'pfund_reached_user_goal', 'pfund_send_goal_reached_email', 10, 3 );
+
+add_filter( 'pfund_render_field_list_item', 'pfund_render_field_list_item', 10, 2 );
 
 add_action( 'template_redirect', 'pfund_display_template' );
 

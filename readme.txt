@@ -49,6 +49,7 @@ When creating or editing a cause, here are several things to keep in mind:
 Each of the fields defined in the Personal Fundraiser Fields section of the Personal Fundraiser settings has a corresponding shortcode.  In addition, the plugin provides the following shortcodes:
 
 * **[pfund-campaign-list]** Display the list of campaigns.
+* **[pfund-campaign-permalink]** Display the permalink(URL) for the campaign.
 * **[pfund-cause-list]** Display the list of causes.
 * **[pfund-comments]** Display the comments/donations for the campaign.
 * **[pfund-donate]** PayPal donate button.  This shortcode is required in order to accept donations for the campaigns.
@@ -57,7 +58,11 @@ Each of the fields defined in the Personal Fundraiser Fields section of the Pers
 * **[pfund-days-left]** The number of days left in the campaign (if an end date is specified for the campaign).
 * **[pfund-gift-goal]** The amount that the user hopes to raise for their campaign.
 * **[pfund-gift-tally]** The total amount raised.
+* **[pfund-giver-list]**  Displays a list of supporters for the current campaign.  The supported attributes are:
+     * **row_max**  Number of supporters to display in one row.  This attribute is simply used to add a css class to the last supporter in a row.  The class is specified by the row_end_class attribute.
+     * **row_end_class**  Class to apply to last support in a row.  This class is applied to the last supporter in a row.
 * **[pfund-giver-tally]** The total number of unique donors to the campaign.
+* **[pfund-user-avatar]** The avatar of the user who created the campaign.  You can specify the size of the avatar by passing a "size" attribute (e.g. [pfund-user-avatar size="50"].
 
 = What do the various settings do? =
 * **Campaign Slug** URL prefix for campaigns.  Also the location of the page containing the list of causes.
@@ -98,9 +103,9 @@ Each of the fields defined in the Personal Fundraiser Fields section of the Pers
     * **Type** Defines the type of field.  The following types are available:
         * **Date Selector** Displays a date picker to the user.
         * **Campaign Title** The field used to contain the campaign title.  This field is required and the type cannot be changed. 
-        * **Campaign URL slug ** The field used to contain the campaign url suffix.  This field is required and the type cannot be changed.
-        * **End Date **  The field used to contain the campaign end date.  The type of this field cannot be changed.
-        * **Large Text Input (textarea) ** Provides a large textbox for users to provide text.
+        * **Campaign URL slug** The field used to contain the campaign url suffix.  This field is required and the type cannot be changed.
+        * **End Date**  The field used to contain the campaign end date.  The type of this field cannot be changed.
+        * **Large Text Input (textarea)** Provides a large textbox for users to provide text.
         * **Image** Provides an image upload.
         * **Select Dropdown** Displays a dropdown for users to select a value.
         * **Text Input** Simple text input field.
@@ -150,6 +155,20 @@ If you are using PayPal's developer sandbox for testing, check this checkbox; ot
 2. Optional user registration.
 
 == Changelog ==
+
+= 0.7.5 =
+
+* Fixed issue of new sample causes being created everytime personal fundraiser
+options are updated.
+* Changed comments to correctly go through proper comment filtering.
+* Changed action, pfund-add-gift, to pfund_add_gift for consistency.
+* Added filters: pfund_field_types, pfund_<CUSTOMTYPE>_input, pfund_<CUSTOMTYPE>_shortcode and pfund_render_field_list_item to allow customization of plugin with custom field types.
+* Added shortcode, pfund-giver-list, to display the list of supporters for the current campaign.
+* Added shortcode, pfund-user-avatar, to display the avatar of the user who created the campaign.
+* Added shortcode, pfund-campaign-permalink, to display the permalink(URL) for the campaign.
+* Fixed incorrect subject on email sent when a campaign goal is met.
+* Fixed issue with image upload.
+* Fixed issue with title and url getting out of sync when editing new campaign from cause screen.
 
 = 0.7.4 =
 

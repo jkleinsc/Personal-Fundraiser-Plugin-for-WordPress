@@ -424,6 +424,8 @@ function pfund_mailchimp_section_text() {
  * Text to display in personal fundraising settings in the main section. 
  */
 function pfund_main_section_text() {
+	$options = get_option( 'pfund_options' );
+	echo '<input type="hidden" value="'.$options['version'].'" name="pfund_options[version]">';
 	echo '<p>'.__( 'General settings for personal fundraiser', 'pfund' ).'</p>';
 }
 
@@ -617,6 +619,7 @@ function _pfund_render_option_field( $field_id, $field ) {
 		'user_email' => __( 'User Email', 'pfund' ),
 		'user_displayname' => __( 'User Display Name', 'pfund' )
 	);
+	$fieldtypes = apply_filters( 'pfund_field_types' , $fieldtypes );
 	$field_label = pfund_get_value( $field, 'label' );
 	$field_desc = pfund_get_value( $field, 'desc' );
 ?>
