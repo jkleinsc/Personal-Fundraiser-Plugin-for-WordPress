@@ -26,11 +26,15 @@ add_filter( 'upgrader_post_install', 'pfund_activate' );
 add_action( 'init', 'pfund_init' );
 
 if ( is_admin() ) {
+	add_action( 'add_meta_boxes_pfund_campaign', 'pfund_admin_js' );
+
 	add_action( 'admin_init', 'pfund_admin_init' );
 
 	add_action( 'admin_menu', 'pfund_admin_setup' );
 
 	add_action( 'admin_print_styles-post.php', 'pfund_admin_css' );
+
+    add_action( 'comment_row_actions', 'pfund_comment_row_actions' );
 
 	add_action( 'manage_edit-pfund_campaign_sortable_columns', 'pfund_campaign_sortable_columns' );
 	
@@ -40,15 +44,19 @@ if ( is_admin() ) {
 
 	add_filter( 'plugin_action_links', 'pfund_plugin_action_links', 10, 2 );
 
-	add_action( 'post_edit_form_tag' , 'pfund_edit_form_tag' );
+	add_action( 'post_edit_form_tag', 'pfund_edit_form_tag' );
 
-	add_action( 'pre_update_option_pfund_options' , 'pfund_pre_update_options' );
+	add_filter( 'post_updated_messages', 'pfund_post_updated_messages' );
+
+	add_filter( 'pre_update_option_pfund_options', 'pfund_pre_update_options', 10, 2 );
 	
 	add_action( 'publish_pfund_campaign', 'pfund_handle_publish', 10, 2 );
 
 	add_action( 'save_post', 'pfund_save_meta', 10, 2);
 
-	add_action( 'update_option_pfund_options' , 'pfund_update_options', 10, 2 );
+	add_action( 'update_option_pfund_options', 'pfund_update_options', 10, 2 );
+
+	add_action( 'wp_ajax_pfund_get_donations_list', 'pfund_get_donations_list' );
 }
 
 add_action( 'map_meta_cap', 'pfund_restrict_edit', 10, 4 );

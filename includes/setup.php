@@ -40,30 +40,37 @@ function pfund_activate() {
 						'label' => __( 'Title', 'pfund' ),
 						'desc' => __( 'The title of your campaign', 'pfund' ),
 						'type' => 'camp_title',
-						'required' => 'true'
+						'required' => true
 					),
 					'camp-location' => array(
 						'label' => __( 'URL', 'pfund' ),
 						'desc' => __( 'The URL for your campaign', 'pfund' ),
 						'type' => 'camp_location',
-						'required' => 'true'
+						'required' => true
 					),
 					'end-date'  => array(
 						'label' => __( 'End Date', 'pfund' ),
 						'desc' => __( 'The date your campaign ends', 'pfund' ),
-						'type' => 'end_date'						
+						'type' => 'end_date',
+						'required' => false
 					),
 					'gift-goal' => array(
 						'label' => __( 'Goal', 'pfund' ),
 						'desc' => __( 'The amount you hope to raise', 'pfund' ),
 						'type' => 'user_goal',
-						'required' => 'true'
+						'required' => true
 					),
 					'gift-tally' => array(
 						'label' => __( 'Total Raised', 'pfund' ),
 						'desc' => __( 'Total donations received', 'pfund' ),
 						'type' => 'gift_tally',
-						'required' => 'true'
+						'required' => true
+					),
+					'giver-tally' => array(
+						'label' => __( 'Giver Tally', 'pfund' ),
+						'desc' => __( 'The number of unique givers for the campaign.', 'pfund' ),
+						'type' => 'giver_tally',
+						'required' => true
 					)
 				)
 			);
@@ -83,7 +90,7 @@ function pfund_activate() {
 			$cause_root_id = wp_insert_post( $page );
 			$pfund_options['cause_root'] = $cause_root_id;
 			$options_changed = true;
-		}		
+		}
 		if ( ! isset( $pfund_options['campaign_root'] ) ) {
 			$page = array(
 				'comment_status' => 'closed',
@@ -116,8 +123,26 @@ function pfund_activate() {
 				'label' => __( 'End Date', 'pfund' ),
 				'desc' => __( 'The date your campaign ends', 'pfund' ),
 				'type' => 'end_date',
-				'required' => 'false'
+				'required' => false
 			);
+			$options_changed = true;
+		}
+		if ( ! isset( $pfund_options['fields']['giver-tally'] ) ) {
+			$pfund_options['fields']['giver-tally'] = array(
+				'label' => __( 'Giver Tally', 'pfund' ),
+				'desc' => __( 'The number of unique givers for the campaign.', 'pfund' ),
+				'type' => 'giver_tally',
+				'required' => true
+			);
+			$options_changed = true;
+		}
+		if ( ! isset( $pfund_options['campaign_listing'] ) ) {
+			$pfund_options['campaign_listing'] = true;
+			$options_changed = true;
+		}
+
+		if ( ! isset( $pfund_options['cause_listing'] ) ) {
+			$pfund_options['cause_listing'] = true;
 			$options_changed = true;
 		}
 
@@ -168,10 +193,14 @@ function pfund_activate() {
 function pfund_add_rewrite_rules( $flush_rules = true ) {
 	$options = get_option( 'pfund_options' );
 	$campaign_root = $options['campaign_slug'];
-	$cause_root = $options['cause_slug'];
-	add_rewrite_rule("$campaign_root$", "index.php?pfund_action=campaign-list",'top');
+	$cause_root = $options['cause_slug'];	
+	if ( $options['campaign_listing'] ) {
+		add_rewrite_rule("$campaign_root$", "index.php?pfund_action=campaign-list",'top');
+	}
 	add_rewrite_rule($campaign_root.'/([0-9]+)/?', 'index.php?post_type=pfund_campaign&p=$matches[1]&preview=true','top');
-	add_rewrite_rule("$cause_root$", "index.php?pfund_action=cause-list",'top');
+	if ( $options['cause_listing']  ) {
+		add_rewrite_rule("$cause_root$", "index.php?pfund_action=cause-list",'top');
+	}
 	if ( $flush_rules ) {
 		flush_rewrite_rules();
 	}
@@ -200,25 +229,29 @@ function pfund_init() {
  * Before personal fundraiser options are saved, add/update sort order for the
  * fields.
  * @param mixed $new_options The options that are about to be saved.
+ * @param mixed $old_options The current options.
  * @return mixed the options to save.
  */
-function pfund_pre_update_options( $new_options ) {
+function pfund_pre_update_options( $new_options, $old_options ) {
 	$i=0;
 	foreach ( $new_options['fields'] as $idx => $field) {
 		$field['sortorder'] = $i++;		
 		$new_options['fields'][$idx] = $field;		
 	}
 
-	$checkboxes = array( 'allow_registration', 'approval_required',
-		'login_required',  'mailchimp', 'paypal_sandbox' );
+	$checkboxes = array( 'allow_registration', 'approval_required', 
+		'campaign_listing','cause_listing','login_required',  'mailchimp',
+		'paypal_sandbox' );
 	foreach ( $checkboxes as $field_name) {
-		if ( $new_options[$field_name] == 'true' ) {
+		if ( isset( $new_options[$field_name] )
+				&& $new_options[$field_name] == 'true' ) {
 			$new_options[$field_name] = true;
 		} else {
 			$new_options[$field_name] = false;
 		}
 	}
 
+	$new_options = array_merge( $old_options, $new_options );
 	return $new_options;
 }
 
@@ -343,7 +376,7 @@ function _pfund_register_types() {
 			'not_found_in_trash' => __( 'No Campaigns Found In Trash', 'pfund' ),
 		),
 		'supports' => array(
-			'title','comments'
+			'title'
 		),
 		'capabilities' => array(
 			'edit_post' => 'edit_campaign'

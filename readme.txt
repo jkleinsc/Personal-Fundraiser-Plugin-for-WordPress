@@ -3,7 +3,7 @@ Contributors: johnkleinschmidt
 Donate link: http://cure.org/donate
 Tags: fundraising, paypal
 Requires at least: 3.1
-Tested up to: 3.2.1
+Tested up to: 3.3
 Stable tag: trunk
 
 Expand your fundraising base by getting your donors and fans involved in the fundraising process.
@@ -59,9 +59,11 @@ Each of the fields defined in the Personal Fundraiser Fields section of the Pers
 * **[pfund-gift-goal]** The amount that the user hopes to raise for their campaign.
 * **[pfund-gift-tally]** The total amount raised.
 * **[pfund-giver-list]**  Displays a list of supporters for the current campaign.  The supported attributes are:
+     * **max_givers**  Maximum number of supporters to display.  If this attribute is specified and the number of supporters exceeds this value, a set of randomized supporters will be returned.
      * **row_max**  Number of supporters to display in one row.  This attribute is simply used to add a css class to the last supporter in a row.  The class is specified by the row_end_class attribute.
      * **row_end_class**  Class to apply to last support in a row.  This class is applied to the last supporter in a row.
 * **[pfund-giver-tally]** The total number of unique donors to the campaign.
+* **[pfund-progress-bar]** Displays a progress bar for the campaign.  This progress bar displays how much of the campaign goal has been achieved.
 * **[pfund-user-avatar]** The avatar of the user who created the campaign.  You can specify the size of the avatar by passing a "size" attribute (e.g. [pfund-user-avatar size="50"].
 
 = What do the various settings do? =
@@ -91,12 +93,15 @@ Each of the fields defined in the Personal Fundraiser Fields section of the Pers
     * **CAMP_TITLE** The title of the campaign.
     * **CAMP_URL** The URL for the campaign.
     * **DONATE_AMT** The amount donated.
+    * **DONOR_ANON** If the donation was an anonymous donation, this value will be "true".
+    * **DONOR_FNAM** Donor's first name (if not an anonymous donation).
+	* **DONOR_LNAM** Donor's last name (if not an anonymous donation).
+	* **DONOR_EMAL** Donor's email(if not an anonymous donation).
 * **Goal Reached Email ID** The MailChimp campaign id of the transactional campaign to use to send an email when the campaign goal is reached.  The following merge fields are passed:
     * **NAME** The display name of the user who created the campaign.
     * **CAMP_TITLE** The title of the campaign.
     * **CAMP_URL** The URL for the campaign.
     * **GOAL_AMT** The goal that was reached.
-
 * **Personal Fundraiser Fields** Defines the fields that are available for use for personal fundraisers.  Each field has the following settings:
     * **Label** The text to display to identify this field on the campaign creation/edit screen.
     * **Description** A longer text description of the field that will be displayed on the campaign creation/edit screen.
@@ -122,7 +127,7 @@ Each of the fields defined in the Personal Fundraiser Fields section of the Pers
 
 = How do I use PayPal? =
  
-Using PayPal requires a Premier or Business PayPal account.  Also there two fields on the Personal Fundraising settings screen that must be set.  These values can be obtained by logging into PayPal:
+Using PayPal requires a Premier or Business PayPal account.  In order to work properly with the Personal Fundaiser plugin, there are several settings that must be set on your PayPal account.  Also there two fields on the Personal Fundraising settings screen that must be set.  These values can be obtained by logging into PayPal:
 
 **Donate Button Code**
 
@@ -141,20 +146,55 @@ PayPal has more information on using a donate button here: <a href="https://www.
 
 1. Click My Account tab.
 1. Click on Profile.
-1. Click Website Payment Preferences in the Seller Preferences column. 
+1. Click on My Selling Tools under My Profile on the left hand side of the screen.
+1. Under the "Selling Online" section, click on *Update* for the line titled *Website Preferences*.
 1. Make sure that Auto Return for Website Payments is turned on.
 1. For Return URL, specify your site's URL. The plugin will override this value to return to the campaign once a donation is processed.
 1. Under the Payment Data Transfer (optional) section, make sure that Payment Data Transfer is On.  If it is already on, copy the Identity Token value and paste it into the *Payment Data Transfer Token* field.  If it is not on, turn it on, click on Save at the bottom of the page and then click Website Payment Preferences in the Seller Preferences column to display the screen again with the  Identity Token value.
 
+**Instant Payment Notification**
+
+Instant Payment Notification or IPN is a secondary measure to ensure that a PayPal donation is recorded by the personal fundraiser.  This is used in cases where a donor closes their browser window after submitting a donation but before returning to your site.
+
+1. Click My Account tab.
+1. Click on Profile.
+1. Click on My Selling Tools under My Profile on the left hand side of the screen.
+1. Under the "Getting paid and managing my risk" section, click on *Update* for the line titled *Instant payment notifications*.
+1. If instant payment notifications is turned off, click on the button that says *Choose IPN Settings*.  If it is turned on, you do not need to do anything else.
+1. For Notification URL, specify your site's URL. The plugin will override this value.
+1. For IPN messages, select Receive IPN messages (Enabled).
+1. Click on Save to save your settings.
+
+
 **Use PayPal Sandbox**
+
 If you are using PayPal's developer sandbox for testing, check this checkbox; otherwise leave it unchecked.
 
 == Screenshots ==
 
 1. Create Personal Fundraiser Screen.
 2. Optional user registration.
+3. Add outside donations from admin.
 
 == Changelog ==
+
+= 0.7.6 =
+
+* Support for WordPress 3.3.
+* Outside donations can now be added through the campaign edit screen.
+* Donations can now be viewed from campaign edit screen.
+* Donations can now be downloaded from the campaign edit screen as a CSV file for use in Excel and other spreadsheet programs.
+* Usability improvements to login/register dialogs.
+* Added pfund-progress-bar shortcode to display a progress bar for the campaign.
+* Added options to disable Campaign Listing and Cause Listing pages.
+* Added ability to modify what cause a campaign uses.
+* Added ability for administrators to modify the number of givers (giver tally) for a campaign.
+* Added default goal value for causes.
+* Added attribute, "default" to image fields so that a default image can be used when a user doesn't include one.
+* Added attribute, "max_givers" to pfund-giver-list shortcode to limit number of givers displayed.
+* Changed filter 'pfund-transaction-array' to pfund_transaction_array for better naming convention.
+* Added "pfund_login_javascript_function" filter to allow a custom javascript function to be called when user chooses to login.
+* Added "pfund_register_javascript_function" filter to allow a custom javascript function to be called when user chooses to register.
 
 = 0.7.5 =
 
@@ -203,10 +243,3 @@ options are updated.
 = 0.7 =
 
 * Initial public release
-
-== To Do ==
-
-* Reporting on all campaigns
-* Finish progress bar shortcode
-* Tweak UI
-

@@ -53,15 +53,28 @@ function pfund_add_gift( $transaction_array, $post ) {
 		if ( $tally == '' ) {
 			$tally = 0;
 		}
-		$tally += $transaction_array['amount'];
+		if ( ! empty( $transaction_array['tally_amount'] ) && is_numeric( $transaction_array['tally_amount'] ) ) {
+			$tally += $transaction_array['tally_amount'];
+		} else {
+			$tally += $transaction_array['amount'];
+		}
 		update_post_meta( $post->ID, '_pfund_gift-tally', $tally );
-		add_post_meta( $post->ID, '_pfund_transaction_ids', $transaction_nonce );		
+		add_post_meta( $post->ID, '_pfund_transaction_ids', $transaction_nonce );
+
+        if ( empty( $transaction_array['anonymous'] ) && (
+                empty( $transaction_array['donor_email'] ) ||
+                empty( $transaction_array['donor_first_name'] ) ||
+                empty( $transaction_array['donor_last_name'] ) ) ) {
+            $transaction_array['anonymous'] = true;
+        }
+
 		add_post_meta( $post->ID, '_pfund_transactions', $transaction_array );
 		_pfund_update_giver_tally( $post->ID );
 
 		$options = get_option( 'pfund_options' );
 		//Add comment for transaction.
-		if ( $transaction_array['anonymous'] ) {
+		if ( isset( $transaction_array['anonymous'] ) &&
+				$transaction_array['anonymous'] == true ) {
 			$commentdata = array(
 				'comment_post_ID' => $post->ID,
 				'comment_content' => sprintf(
@@ -89,6 +102,8 @@ function pfund_add_gift( $transaction_array, $post ) {
 		if ( ! empty( $transaction_array['comment'] ) ) {
 			$commentdata['comment_content'] = $transaction_array['comment'];
 		}
+		$commentdata['comment_author_IP'] = '';
+		$commentdata['comment_author_url'] = '';
 		$commentdata = wp_filter_comment( $commentdata );
 		$comment_id = wp_insert_comment( $commentdata );
 		add_comment_meta($comment_id, 'pfund_trans_amount', $transaction_array['amount']);
@@ -108,8 +123,8 @@ function pfund_add_gift( $transaction_array, $post ) {
  */
 function pfund_campaign_list() {
 	global $wp_query;
-
-	wp_enqueue_style( 'pfund-user', PFUND_URL.'css/user.css', array(), PFUND_VERSION );
+	wp_enqueue_style( 'pfund-user', pfund_determine_file_location('user','css'),
+			array(), PFUND_VERSION );
 	$post_query = array(
 		'post_type' => 'pfund_campaign',
 		'orderby' => 'title',
@@ -156,7 +171,8 @@ function pfund_campaign_permalink() {
  * @return string HTML that contains the campaign list.
  */
 function pfund_cause_list() {
-	wp_enqueue_style( 'pfund-user', PFUND_URL.'css/user.css', array(), PFUND_VERSION );
+	wp_enqueue_style( 'pfund-user', pfund_determine_file_location('user','css'),
+			array(), PFUND_VERSION );
 	$options = get_option( 'pfund_options' );
 	$causes = get_posts(
 		array(
@@ -301,14 +317,17 @@ function pfund_display_template() {
 	if ( $options['allow_registration'] ) {
 		$script_reqs[] = 'jquery-form';
 	}
-	wp_enqueue_script( 'pfund-user', PFUND_URL.'js/user.js', $script_reqs, PFUND_VERSION, true );
-	wp_enqueue_style( 'pfund-user', PFUND_URL.'css/user.css', array(), PFUND_VERSION );
-
+	wp_enqueue_script( 'pfund-user', pfund_determine_file_location('user','js'),
+			$script_reqs, PFUND_VERSION, true );
+	wp_enqueue_style( 'pfund-user', pfund_determine_file_location('user','css'),
+			array(), PFUND_VERSION );
 	$admin_email = get_option( 'admin_email' );
 	$script_vars = array(
 		'cancel_btn' => __( 'Cancel', 'pfund' ),
+		'continue_editing_btn' => __( 'Continue Editing', 'pfund' ),
 		'email_exists' => __( 'This email address is already registered', 'pfund' ),
 		'invalid_email' =>__( 'Invalid email address', 'pfund' ),
+		'login_btn' => __( 'Login', 'pfund' ),
 		'mask_passwd' => __( 'Mask password', 'pfund' ),
 		'ok_btn' => __( 'Ok', 'pfund' ),
 		'register_btn' => __( 'Register', 'pfund' ),
@@ -320,6 +339,14 @@ function pfund_display_template() {
 	);
 	if ( ! empty( $options['date_format'] ) ) {
 		$script_vars['date_format'] = _pfund_get_jquery_date_fmt( $options['date_format'] );
+	}
+	$login_fn = apply_filters( 'pfund_login_javascript_function', '' );
+	if ( ! empty( $login_fn ) ) {
+		$script_vars['login_fn'] = $login_fn;
+	}
+	$register_fn = apply_filters( 'pfund_register_javascript_function', '' );
+	if ( ! empty( $register_fn ) ) {
+		$script_vars['register_fn'] = $register_fn;
 	}
 	wp_localize_script( 'pfund-user', 'pfund', $script_vars);
 
@@ -411,14 +438,16 @@ function pfund_edit() {
 			$campaign_id = $campaign->ID;
 			$campaign_title = $campaign->post_title;
 		} else {
-			$campaign_title = $post->post_title;
+			$campaign_title = $post->post_title;			
 			$campaign_id = null;
 		}
+		$default_goal = get_post_meta( $post->ID, '_pfund_cause_default_goal', true);
 	} else {
 		$editing_campaign = true;
 		$campaign_id = $post->ID;
 		$campaign_title = $post->post_title;
 		$campaign = $post;
+		$default_goal = '';
 	}
 
 	$wait_title = esc_attr__( 'Please wait', 'pfund' );
@@ -448,7 +477,7 @@ function pfund_edit() {
 		$return_form .= '	<input type="hidden" name="pfund_action" value="create-campaign"/>';
 		$return_form .= wp_nonce_field( 'pfund-create-campaign'.$post->ID, 'n', true , false );
 	}
-	$return_form .= pfund_render_fields( $campaign_id, $campaign_title, $editing_campaign );
+	$return_form .= pfund_render_fields( $campaign_id, $campaign_title, $editing_campaign, $default_goal );
 	$return_form .= '</form>';
 	$return_form .= '</div>';
 	$return_form .= '<script type="text/javascript">';
@@ -486,16 +515,26 @@ function pfund_giver_list( $attrs ) {
 		$row_end_class = 'row-end clearfix';
 		$row_max = 3;
 	}
+	$max_givers = -1;
+	if ( ! empty( $attrs['max_givers'] ) ) {
+		$max_givers = intval( $attrs['max_givers'] );
+	}
 	if ( ! pfund_is_pfund_post() ) {
 		return '';
 	} else {		
-		$givers = get_post_meta( $post->ID, '_pfund_givers', true );		
-		if ( $givers == '' ) {
+		$givers = get_post_meta( $post->ID, '_pfund_givers', true );
+		if ( empty( $givers ) ) {
 			return '';
+		}
+		if ( $max_givers > -1 && count($givers) > $max_givers ) {
+			$email_array = array_rand( $givers, $max_givers );
+		} else {
+			$email_array = array_keys( $givers );
 		}
 		$giver_count = 0;
 		$list = '<ul class=".pfund-supporters-list">';
-		foreach( $givers as $email=>$donor ) {
+		foreach( $email_array as $email ) {
+			$donor = $givers[$email];
 			$giver_count++;
 			$class = 'pfund-supporter';
 			if ($giver_count % $row_max == 0) {
@@ -516,35 +555,19 @@ function pfund_giver_list( $attrs ) {
 }
 
 /**
- * Shortcode handler for pfund-giver-tally.  Returns the number of unique givers
- * for the current campaign.
- * @return string the number of unique givers.
- */
-function pfund_giver_tally() {
-	global $post;
-	if ( ! pfund_is_pfund_post() ) {
-		return '';
-	} else {
-		$tally = get_post_meta( $post->ID, '_pfund_giver-tally', true );
-		if ( $tally == '' ) {
-			$tally = '0';
-		}
-		return $tally;
-	}
-}
-
-/**
  * Handler for actions performed on a cause.
  * @param mixed $posts The current posts provided by the_posts filter.
  * @return mixed $posts The current posts provided by the_posts filter.
  */
 function pfund_handle_action( $posts ) {
-	global $pfund_processed_action, $wp_query;
+	global $pfund_processed_action, $pfund_processing_action, $wp_query;
 	if ( empty ( $posts ) ) {
 		return $posts;
 	}
 	$post = $posts[0];
-	if ( isset( $wp_query->query_vars['pfund_action'] ) && ! $pfund_processed_action ) {
+	if ( isset( $wp_query->query_vars['pfund_action'] ) 
+			&& ! $pfund_processed_action && ! $pfund_processing_action ) {
+		$pfund_processing_action = true;
 		$action = $wp_query->query_vars['pfund_action'];
 		if ( ! in_array( $action, array( 'cause-list', 'campaign-list' ) ) ) {			
 			if ( ! pfund_is_pfund_post( $post ) ){
@@ -557,7 +580,7 @@ function pfund_handle_action( $posts ) {
 			}
 			if( $action == 'donate-campaign' ) {
 				$referer_action .= $_REQUEST['g'];
-			}
+			}			
 			if( $action == 'user-login' ) {
 				global $current_user;
 				get_currentuserinfo();
@@ -592,7 +615,6 @@ function pfund_handle_action( $posts ) {
 				_pfund_save_camp( $post, 'user-login' );
 				break;
 		}
-		$pfund_processed_action = true;
 		if( ! empty( $posts ) ) {
 			$wp_query->is_home = false;
 			$wp_query->queried_object = $posts[0];
@@ -600,6 +622,8 @@ function pfund_handle_action( $posts ) {
 			$wp_query->is_page = true;
 			$wp_query->is_singular = true;
 		}
+		$pfund_processed_action = true;
+		$pfund_processing_action = false;
 	}
 	return $posts;
 }
@@ -620,15 +644,9 @@ function pfund_handle_title( $atitle ) {
 
 /**
  * Shortcode handler for pfund-progress-bar shortcode
- * @param array $attrs Attributes array for the progress bar.  Allowable
- * attributes are:
- *   1) title -- title to display with progress bar
- *   2) funded_msg -- message to display once the goal has been met.
- * @param string $content Description of what this progress bar is for.
- * Displayed above the progress bar.
  * @return string HTML markup for progress bar.
  */
-function pfund_progress_bar( $attrs, $content ) {
+function pfund_progress_bar() {
 	global $post;
 	if ( ! pfund_is_pfund_post() ){
 		return '';
@@ -644,37 +662,28 @@ function pfund_progress_bar( $attrs, $content ) {
 	if ( $tally == '' ) {
 		$tally = 0;
 	}
-	$remaining = $goal - $tally;
-
-	$return_content = '<div class="pfund-progress">';
-	if ( ! empty( $attrs['title'] ) ) {
-		$return_content .='	<h3>'.do_shortcode( $attrs['title'] ).'</h3>';
-	}
-	$return_content .='	<p class="pfund-progress-desc">'.do_shortcode( $content ).'</p>';
-
+	$remaining = ($goal - $tally);
 	$funding_percentage = 1;
 	if ( $remaining <= 0 ) {
 		$funding_percentage = 1;
 	} else if ( $tally < $goal ) {
-		$funding_percentage = $tally / $goal;
+		$funding_percentage = ($tally / $goal);
 	}
-	$goal_length = number_format( ( 240 * $funding_percentage ) -240 );
-	$return_content .= '	<div id="progressBar" style="background-position:'.$goal_length.'px 0">';
-	$return_content .= '		<span>&nbsp;</span>';
+	$goal_length = number_format((240 * $funding_percentage));
+	$return_content = '<div class="pfund-progress-meter ">';
+	$return_content .= '	<p class="pfund-progress-met">';
+	$return_content .= '		<span class="pfund-amount"><sup>'.$options['currency_symbol'].'</sup>';
+	$return_content .=				number_format( floatval( $tally ) );
+	$return_content .= '		</span> '.__('Raised', 'pfund');
+	$return_content .= '	</p>';
+	$return_content .= '	<div class="pfund-progress-bar">';
+	$return_content .= '		<div class="pfund-amount-raised" style="width:'.$goal_length.'px;"></div>';
 	$return_content .= '	</div>';
-	if ( $remaining <= 0 ) {
-		if ( isset( $attrs['funded_msg'] ) ) {
-			$return_content .= '<h4>'.do_shortcode( $attrs['funded_msg'] ).'</h4>';
-		}
-	} else {
-		$return_content .= '<div id="progressStat-Met"><span class="arrow"></span>';
-		$return_content .= '<p>'.__( 'met', 'pfund' );
-		$return_content .= '<span class="met-amount">'.$options['currency_symbol'].number_format( floatval( $tally ) ).'</span></p></div>';
-		$return_content .= '<div id="progressStat-Needed">';
-		$return_content .= '<span class="arrow"></span>';
-		$return_content .= '<p>'.__( 'needed', 'pfund' );
-		$return_content .= '<span class="needed-amount">'.$options['currency_symbol'].number_format( floatval( $remaining ) ).'</span></p></div>';
-	}
+	$return_content .= '	<p class="pfund-progress-goal">'.__('Goal:', 'pfund').' ';
+	$return_content .= '		<span class="pfund-amount"><sup>'.$options['currency_symbol'].'</sup>';
+	$return_content .=				number_format( floatval( $goal ) );
+	$return_content .= '		</span>';
+	$return_content .= '	</p>';
 	$return_content .= '</div>';
 	return $return_content;
 }
@@ -703,34 +712,38 @@ function pfund_send_donate_email( $transaction_array, $post ) {
 		$options = get_option( 'pfund_options' );
 		$author_data = pfund_get_contact_info( $post, $options );
 		$campaignUrl = get_permalink( $post );
+		$trans_amount = number_format( floatval( $transaction_array['amount'] ) );
 		if ( $options['mailchimp'] ) {
 			$merge_vars = array(
 				'NAME' => $author_data->display_name,
 				'CAMP_TITLE' => $post->post_title,
 				'CAMP_URL' => $campaignUrl,
-				'DONATE_AMT' => $options['currency_symbol'].$transaction_array['amount']
+				'DONATE_AMT' => $options['currency_symbol'].$trans_amount
 			);			
-			if ( $transaction_array['anonymous'] ) {
+			if ( isset( $transaction_array['anonymous'] ) &&
+					$transaction_array['anonymous'] == true ) {
 				$merge_vars['DONOR_ANON'] = 'true';
 			} else {
-				$merge_vars['DONOR_FNAME'] = $transaction_array['donor_first_name'];
-				$merge_vars['DONOR_LNAME'] = $transaction_array['donor_last_name'];
-				$merge_vars['DONOR_EMAIL'] = $transaction_array['donor_email'];
+				$merge_vars['DONOR_ANON'] = 'false';
+				$merge_vars['DONOR_FNAM'] = $transaction_array['donor_first_name'];
+				$merge_vars['DONOR_LNAM'] = $transaction_array['donor_last_name'];
+				$merge_vars['DONOR_EMAL'] = $transaction_array['donor_email'];
 			}
 			pfund_send_mc_email($author_data->user_email, $merge_vars, $options['mc_email_donate_id']);
 		} else {
 			$pub_message = sprintf(__( 'Dear %s,', 'pfund' ), $author_data->display_name ).PHP_EOL;
-			if ( $transaction_array['anonymous'] ) {
+			if ( isset( $transaction_array['anonymous'] ) &&
+				$transaction_array['anonymous'] == true ) {
 				$pub_message .= sprintf(__( 'An anonymous gift of %s%d has been received for your campaign, %s.', 'pfund' ),
 						$options['currency_symbol'],
-						$transaction_array['amount'],
+						$trans_amount,
 						$post->post_title).PHP_EOL;
 			} else {
 				$pub_message .= sprintf(__( '%s %s donated %s%d to your campaign, %s.', 'pfund' ),
 						$transaction_array['donor_first_name'],
 						$transaction_array['donor_last_name'],
 						$options['currency_symbol'],
-						$transaction_array['amount'], 
+						$trans_amount,
 						$post->post_title).PHP_EOL;
 				$pub_message .= sprintf(__( 'If you would like to thank %s, you can email %s at %s.', 'pfund' ),
 						$transaction_array['donor_first_name'],
@@ -738,7 +751,7 @@ function pfund_send_donate_email( $transaction_array, $post ) {
 						$transaction_array['donor_email']).PHP_EOL;
 			}			
 			$pub_message .= sprintf(__( 'You can view your campaign at: %s.', 'pfund' ), $campaignUrl ).PHP_EOL;
-			wp_mail($author_data->user_email, __( 'A donation has been received ', 'pfund' ) , $pub_message);
+			wp_mail($author_data->user_email, __( 'A donation has been received', 'pfund' ) , $pub_message);
 		}
 	}
 }
@@ -772,14 +785,14 @@ function pfund_send_goal_reached_email( $transaction_array, $post, $goal ) {
 				'NAME' => $author_data->display_name,
 				'CAMP_TITLE' => $post->post_title,
 				'CAMP_URL' => $campaignUrl,
-				'GOAL_AMT' => $goal
+				'GOAL_AMT' => $options['currency_symbol'].number_format( floatval( $goal ) )
 			);
-			pfund_send_mc_email($author_data->user_email, $merge_vars, $options['pfund_mc_email_goal_id']);
+			pfund_send_mc_email($author_data->user_email, $merge_vars, $options['mc_email_goal_id']);
 		} else {
-			$pub_message = sprintf(__( 'Dear %s,', 'pfund' ), $author_data->first_name).PHP_EOL;
+			$pub_message = sprintf(__( 'Dear %s,', 'pfund' ), $author_data->display_name).PHP_EOL;
 		
 			$pub_message .= sprintf(__( 'Congratulations!  Your campaign goal of %s has been met!', 'pfund' ),
-					$goal,
+					number_format( floatval( $goal ) ),
 					$post->post_title ).PHP_EOL;
 			$pub_message .= sprintf(__( 'You can view your campaign at: %s.', 'pfund' ), $campaignUrl ).PHP_EOL;
 			wp_mail($author_data->user_email, __( 'Campaign goal met!', 'pfund' ) , $pub_message);
@@ -818,14 +831,19 @@ function pfund_setup_shortcodes() {
  */
 function pfund_user_avatar( $attrs ){
 	global $post;
-	$options = get_option( 'pfund_options' );
-	$contact_info = pfund_get_contact_info( $post, $options );
+	if( $post->ID == null || $post->post_type != 'pfund_campaign' ) {
+		$user_email = '';
+	} else {
+		$options = get_option( 'pfund_options' );
+		$contact_info = pfund_get_contact_info( $post, $options );
+		$user_email = $contact_info->user_email;
+	}
 	if ( ! empty ( $attrs['size'] ) ) {
 		$size = $attrs['size'];
 	} else {
 		$size = '';
 	}
-	return get_avatar( $contact_info->user_email, $size );
+	return get_avatar( $user_email, $size );
 }
 
 /**
@@ -969,28 +987,31 @@ function _pfund_dynamic_shortcode( $attrs, $content, $tag ) {
 	$field = $options['fields'][$field_id];
 
 	$data = get_post_meta( $postid, '_pfund_'.$field_id, true );
-	if( empty( $data ) ) {
-		if ( in_array( $field['type'], array( 'user_goal', 'gift_tally' ) ) ) {
-			return '0';
-		} else {
-			return '';
-		}
-	}
 	$return_data = '';
 	switch ( $field['type'] ) {
 		case 'end_date':
 		case 'date':
-			$return_data = pfund_format_date( $data , $options['date_format'] );
+			if( ! empty( $data ) ) {
+				$return_data = pfund_format_date( $data , $options['date_format'] );
+			}
 			break;
 		case 'text':
 		case 'textarea':
-			$return_data = wpautop( $data );
+			$return_data = wpautop( make_clickable( $data ) );
 			break;
 		case 'image':
-			$return_data = '<img class="pfund-img" src="' . wp_get_attachment_url( $data ) . '" />';
+			if( empty( $data ) && isset( $attrs['default'] ) ) {
+				$img_src = $attrs['default'];
+			} else if ( ! empty( $data ) ) {
+				$img_src = wp_get_attachment_url( $data );
+			}
+			if ( ! empty( $img_src ) ) {
+				$return_data = '<img class="pfund-img" src="' .$img_src. '" />';
+			}
 			break;
 		case 'user_goal':
 		case 'gift_tally':
+		case 'giver_tally':
 			if ( empty ( $data ) ) {
 				$data = '0';
 			}
@@ -1115,10 +1136,11 @@ function _pfund_process_donate( $post ){
 			$transaction_array = pfund_process_paypal_ipn();
 			break;
 		default:
-			$transaction_array = array(
-				'amount' => $_REQUEST['a'],
-				'success' => true
-			);
+			$transaction_array = array();
+			if (isset($_REQUEST['a'])) {
+				$transaction_array['amount'] = $_REQUEST['a'];
+				$transaction_array['success'] = true;
+			}
 	}
 
 	if (isset($_REQUEST['n'])) {
@@ -1126,8 +1148,10 @@ function _pfund_process_donate( $post ){
 	}
 
 	//Allow integration of other transactions processing systems
-	$transaction_array = apply_filters( 'pfund-transaction-array', $transaction_array );
-	do_action( 'pfund_add_gift', $transaction_array, $post );
+	$transaction_array = apply_filters( 'pfund_transaction_array', $transaction_array );
+	if ( ! empty( $transaction_array ) ) {
+		do_action( 'pfund_add_gift', $transaction_array, $post );
+	}
 	
 	//For IPN response exit since this is a server-side call.
 	if ( $confirmation_type == 'ipn' ) {
@@ -1236,7 +1260,7 @@ function _pfund_save_camp( $post, $update_type = 'add' ) {
 		$login_link = wp_login_url( $preview_url );
 		if ( $options['allow_registration'] ) {
 			$update_message = sprintf( $update_message,
-					__( 'To make this campaign available for others to view, please <a href="%s">Login</a> or <a id="pfund-register-link" href="#">Register</a>.', 'pfund' ) );
+					__( 'To make this campaign available for others to view, please <a id="pfund-login-link" href="%s">Login</a> or <a id="pfund-register-link" href="#">Register</a>.', 'pfund' ) );
 			$additional_content = '<div id="pfund-register-dialog" style="display:none;" title="'.esc_attr__( 'Register','pfund' ).'">';
 			$additional_content .= '<form name="pfund_create_account_form" id="pfund-create-account-form" action="'.PFUND_URL.'register-user.php" method="post">';
 			$additional_content .= '<ul class="pfund-list">';
@@ -1276,7 +1300,7 @@ function _pfund_save_camp( $post, $update_type = 'add' ) {
 			$additional_content .= '</div>';
 		} else {
 			$update_message = sprintf( $update_message,
-					__( 'To make this campaign available for others to view, please <a href="%s">Login</a>.', 'pfund' ) );
+					__( 'To make this campaign available for others to view, please <a id="pfund-login-link" href="%s">Login</a>.', 'pfund' ) );
 		}
 		$update_content = sprintf( $update_message, $login_link );
 	}
@@ -1297,20 +1321,33 @@ function _pfund_save_camp( $post, $update_type = 'add' ) {
  * @param <type> $campaign_id
  */
 function _pfund_update_giver_tally( $campaign_id ) {
-	$givers = array();
-	$giver_tally = 0;
+	$givers = get_post_meta( $campaign_id, '_pfund_givers', true );
+	if ( empty( $givers )) {
+		$givers = array();
+	}
+	$total_giver_tally = 0;
+	$new_giver = false;
 	$transactions = get_post_meta( $campaign_id, '_pfund_transactions' );
 	foreach ( $transactions as $transaction ) {
-		if ( $transaction['anonymous'] ) {
-			$giver_tally++;
+		if ( isset( $transaction['anonymous'] ) &&
+				$transaction['anonymous'] == true ) {
+			$total_giver_tally++;
+			$new_giver = true;
 		} else if ( ! empty( $transaction['donor_email']) &&
 				! array_key_exists( $transaction['donor_email'], $givers ) ) {
-			$giver_tally++;
+			$total_giver_tally++;
+			$new_giver = true;
 			$givers[$transaction['donor_email']] = array(
 				'first_name' => $transaction['donor_first_name'],
 				'last_name' => $transaction['donor_last_name'],
 			);
 		}
+	}
+	$giver_tally = get_post_meta( $campaign_id, '_pfund_giver-tally', true );
+	if ( empty( $giver_tally ) ) {
+		$giver_tally = $total_giver_tally;
+	} else if ( $new_giver ) {
+		$giver_tally++;
 	}
 	update_post_meta( $campaign_id, '_pfund_giver-tally', $giver_tally );
 	update_post_meta( $campaign_id, '_pfund_givers', $givers );

@@ -36,7 +36,6 @@ define( 'PFUND_PAYPAL_SANDBOX_URL', 'https://www.sandbox.paypal.com/cgi-bin/webs
  *	 error_msg -- Text message describing error encountered.
  */
 function pfund_process_paypal_pdt() {
-	error_log("in pfund_process_paypal_pdt");
 	$return_array = array( 'success' => false );
 	try {
 		$options = get_option( 'pfund_options' );
@@ -52,9 +51,12 @@ function pfund_process_paypal_pdt() {
 			$lines = explode( "\n", $response['body'] );
 			$keyarray = array();
 			if ( strcmp( $lines[0], "SUCCESS" ) == 0 ) {
-				for ( $i=1; $i<count( $lines );$i++ ){
-					list( $key, $val ) = explode( "=", $lines[$i] );
-					$keyarray[urldecode( $key )] = urldecode( $val );
+				$linecount = count( $lines );
+				for ( $i=1; $i<$linecount;$i++ ){
+					if (strpos($lines[$i], "=") !== false) {
+						list( $key, $val ) = explode( "=", $lines[$i] );
+						$keyarray[urldecode( $key )] = urldecode( $val );
+					}
 				}
 				$return_array['success'] = true;
 				_pfund_map_paypal_fields( $keyarray, &$return_array );
@@ -93,7 +95,7 @@ function pfund_process_paypal_pdt() {
 function pfund_process_paypal_ipn() {
 	$return_array = array( 'success' => false );
 	try {
-		$request_body = $_POST;
+        $request_body = stripslashes_deep($_POST);
 		$request_body['cmd'] = '_notify-validate';
 		$response = _pfund_call_paypal( $request_body, $options['paypal_sandbox'] );
 		if ( ! is_wp_error( $response ) && ! empty( $response['body'] ) ) {

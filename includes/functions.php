@@ -108,6 +108,18 @@ function pfund_determine_shortcode( $id, $type = '' ) {
 }
 
 /**
+ * Determine and return the proper location of the specified file.  This
+ * function allows the use of .dev files when debugging.
+ * @param string $name The name of the file, not including directory and
+ * extension.
+ * @param string $type The type of file.  Valid values are js or css.
+ * @return string the file location to use.
+ */
+function pfund_determine_file_location( $name, $type ) {
+	$suffix = defined('SCRIPT_DEBUG') && SCRIPT_DEBUG ? '.dev' : '';
+	return PFUND_URL."$type/$name$suffix.$type";
+}
+/**
  * Filter to campaigns to use content from the cause they where created from.
  * @param string $content The current post content
  * @return string The cause content if the post is a personal fundraiser
@@ -122,7 +134,7 @@ function pfund_handle_content( $content ) {
 		$cause = get_post( $causeid );
 		return $cause->post_content.$pfund_update_message;
 	} else if ( $post->post_type == 'pfund_cause' ) {
-		return $content.$pfund_update_message;
+		return $post->post_content.$pfund_update_message;
 	}
 }
 
@@ -158,12 +170,17 @@ function pfund_is_pfund_post( $post_to_check = false, $include_lists = false ) {
  * @param string $campaign_title The title of the campaign being edited.
  * @param boolean $editing_campaign true if campaign is being edited;false if new campaign.
  * Defaults to true.
+ * @param string $default_goal default goal for campaign.  Defaults to empty.
  * @return string The HTML for the input fields.
  */
-function pfund_render_fields( $postid, $campaign_title, $editing_campaign = true ) {
+function pfund_render_fields( $postid, $campaign_title, $editing_campaign = true, $default_goal = '' ) {
 	global $current_user, $post;
 	$options = get_option( 'pfund_options' );
 	$inputfields = array();
+	$matches = array();
+	$result = preg_match_all( '/'.get_shortcode_regex().'/s', pfund_handle_content( $post->post_content ), $matches );
+	$tags = $matches[2];
+	$attrs = $matches[3];
 	if ( is_admin() ) {
 		$render_type = 'admin';
 		if ( isset( $options['fields'] ) ) {
@@ -174,17 +191,20 @@ function pfund_render_fields( $postid, $campaign_title, $editing_campaign = true
 					'value' => $field_value
 				);
 			}
+			$content_idx = array_search('pfund-'.$field_id, $tags);
+			if ( $content_idx !== false ){
+				$inputfields['pfund-'.$field_id]['attrs'] = $attrs[$content_idx];
+			}
 		}
 		$content = '';
 	} else {
 		$render_type = 'user';
 		get_currentuserinfo();
-		$matches = array();
-		$result = preg_match_all( '/'.get_shortcode_regex().'/s', pfund_handle_content( $post->post_content ), $matches );
-		$tags = $matches[2];
-		$attrs = $matches[3];
 		$inputfields = array();
 		foreach( $tags as $idx => $tag ) {
+			if ( $tag == 'pfund-days-left' ) {
+				$tag = 'pfund-end-date';
+			}
 			$field_id = substr( $tag, 6 );			
 			$field_value = get_post_meta( $postid, '_pfund_'.$field_id, true );
 			if ( isset( $options['fields'][$field_id] ) ) {
@@ -211,16 +231,19 @@ function pfund_render_fields( $postid, $campaign_title, $editing_campaign = true
 		);
 	}
 
-	$current_goal = get_post_meta( $postid, '_pfund_gift-goal', true );
 	if ( ! isset( $inputfields['pfund-gift-goal'] ) ) {
+		$current_goal = get_post_meta( $postid, '_pfund_gift-goal', true );
 		$inputfields['pfund-gift-goal'] = array(
 			'field' => $options['fields']['gift-goal'],
 			'value' => $current_goal
 		);
 	}
+	if ( empty( $inputfields['pfund-gift-goal']['value'] ) ) {
+		$inputfields['pfund-gift-goal']['value'] = $default_goal;
+	}
 
-	$current_tally = get_post_meta( $postid, '_pfund_gift-tally', true );
 	if ( ! isset( $inputfields['pfund-gift-tally'] ) ) {
+		$current_tally = get_post_meta( $postid, '_pfund_gift-tally', true );
 		$inputfields['pfund-gift-tally'] = array(
 			'field' => $options['fields']['gift-tally'],
 			'value' => $current_tally
@@ -234,7 +257,7 @@ function pfund_render_fields( $postid, $campaign_title, $editing_campaign = true
 		$field = $field_data['field'];
 		$value = pfund_get_value( $field_data, 'value' );
 
-		$field_options = array(
+		$field_options = array(			
 			'name' => $tag,
 			'desc' => pfund_get_value( $field, 'desc' ),
 			'label' => pfund_get_value( $field, 'label' ),
@@ -243,7 +266,9 @@ function pfund_render_fields( $postid, $campaign_title, $editing_campaign = true
 			'field_count' => $field_idx,
 			'required' => pfund_get_value( $field, 'required', false )
 		);
-
+		if ( isset( $field_data['attrs'] ) ) {
+			$field_options['attrs']= shortcode_parse_atts( $field_data['attrs'] );
+		}
 		switch ( $field['type'] ) {
 			case 'camp_title':
 				if ( ! is_admin() ) {
@@ -285,7 +310,13 @@ function pfund_render_fields( $postid, $campaign_title, $editing_campaign = true
 				);
 				$content .= _pfund_render_text_field( $field_options );
 				$field_idx++;
-				break;			
+				break;
+			case 'giver_tally':
+				if ( is_admin() ) {
+					$content .= _pfund_render_text_field( $field_options );
+					$field_idx++;					
+				}
+				break;
 			case 'user_goal':
 				$field_options['custom_validation'] = 'custom[onlyNumber]';
 				$content .= _pfund_render_text_field( $field_options );

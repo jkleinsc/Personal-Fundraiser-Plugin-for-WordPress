@@ -5,10 +5,10 @@
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: Personal Fundraiser 0.7.5\n"
+"Project-Id-Version: Personal Fundraiser 0.7.6\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2011-10-27 13:47-0500\n"
-"PO-Revision-Date: 2011-10-27 13:47-0500\n"
+"POT-Creation-Date: 2011-12-20 15:04-0500\n"
+"PO-Revision-Date: 2011-12-20 15:04-0500\n"
 "Last-Translator: John Kleinschmidt <jk@cure.org>\n"
 "Language-Team: CURE International <info@cure.org>\n"
 "Language: \n"
@@ -19,279 +19,373 @@ msgstr ""
 "X-Poedit-Basepath: ../\n"
 "X-Poedit-SearchPath-0: .\n"
 
-#: includes/admin.php:33
-msgid "Personal Fundraiser Options"
-msgstr ""
-
-#: includes/admin.php:36
-msgid "Campaign Slug"
-msgstr ""
-
-#: includes/admin.php:47
-msgid "Cause Slug"
-msgstr ""
-
-#: includes/admin.php:58
-msgid "Currency Symbol"
-msgstr ""
-
-#: includes/admin.php:69
-msgid "Date Format"
-msgstr ""
-
-#: includes/admin.php:80
-msgid "Campaign Creation Options"
+#: includes/admin.php:56
+msgid "Campaign must be published before donations can be accepted."
 msgstr ""
 
 #: includes/admin.php:86
+msgid "Personal Fundraiser Options"
+msgstr ""
+
+#: includes/admin.php:89
+msgid "Campaign Slug"
+msgstr ""
+
+#: includes/admin.php:100
+msgid "Use Campaign Listing Page"
+msgstr ""
+
+#: includes/admin.php:112
+msgid "Cause Slug"
+msgstr ""
+
+#: includes/admin.php:123
+msgid "Use Cause Listing Page"
+msgstr ""
+
+#: includes/admin.php:136
+msgid "Currency Symbol"
+msgstr ""
+
+#: includes/admin.php:147
+msgid "Date Format"
+msgstr ""
+
+#: includes/admin.php:158
+msgid "Campaign Creation Options"
+msgstr ""
+
+#: includes/admin.php:164
 msgid "Login Required to Create"
 msgstr ""
 
-#: includes/admin.php:98
+#: includes/admin.php:176
 msgid "Allow Users To Register"
 msgstr ""
 
-#: includes/admin.php:110
+#: includes/admin.php:188
 msgid "Campaigns Require Approval"
 msgstr ""
 
-#: includes/admin.php:122
+#: includes/admin.php:200
 msgid "User Roles that can submit campaigns"
 msgstr ""
 
-#: includes/admin.php:133
+#: includes/admin.php:211
 msgid "PayPal Options"
 msgstr ""
 
-#: includes/admin.php:139
+#: includes/admin.php:217
 msgid "Donate Button Code"
 msgstr ""
 
-#: includes/admin.php:150
+#: includes/admin.php:228
 msgid "Payment Data Transfer Token"
 msgstr ""
 
-#: includes/admin.php:162
+#: includes/admin.php:240
 msgid "Use PayPal Sandbox"
 msgstr ""
 
-#: includes/admin.php:175
+#: includes/admin.php:253
 msgid "MailChimp Options"
 msgstr ""
 
-#: includes/admin.php:182
+#: includes/admin.php:260
 msgid "Use MailChimp to send emails"
 msgstr ""
 
-#: includes/admin.php:194
+#: includes/admin.php:272
 msgid "MailChimp API key"
 msgstr ""
 
-#: includes/admin.php:206
+#: includes/admin.php:284
 msgid "Campaign Approval Email ID"
 msgstr ""
 
-#: includes/admin.php:217
+#: includes/admin.php:295
 msgid "Campaign Donation Email ID"
 msgstr ""
 
-#: includes/admin.php:228
+#: includes/admin.php:306
 msgid "Goal Reached Email ID"
 msgstr ""
 
-#: includes/admin.php:239
+#: includes/admin.php:317
 msgid "Personal Fundraiser Fields"
 msgstr ""
 
-#: includes/admin.php:256
+#: includes/admin.php:339
 msgid "Personal Fundraiser Settings"
 msgstr ""
 
-#: includes/admin.php:256
-#: includes/admin.php:470
+#: includes/admin.php:339
+#: includes/admin.php:639
 msgid "Personal Fundraiser"
 msgstr ""
 
-#: includes/admin.php:259
-#: includes/admin.php:260
+#: includes/admin.php:342
+#: includes/admin.php:345
 msgid "Personal Fundraising fields"
 msgstr ""
 
-#: includes/admin.php:282
-#: includes/setup.php:312
+#: includes/admin.php:343
+msgid "Donation Listing"
+msgstr ""
+
+#: includes/admin.php:344
+msgid "Add Donation"
+msgstr ""
+
+#: includes/admin.php:373
+#: includes/admin.php:387
+#: includes/setup.php:345
 msgid "Cause"
 msgstr ""
 
-#: includes/admin.php:283
+#: includes/admin.php:388
 msgid "User"
 msgstr ""
 
-#: includes/admin.php:284
-#: includes/setup.php:57
+#: includes/admin.php:389
+#: includes/setup.php:58
 msgid "Goal"
 msgstr ""
 
-#: includes/admin.php:285
+#: includes/admin.php:390
+#: includes/user.php:677
 msgid "Raised"
 msgstr ""
 
-#: includes/admin.php:307
+#: includes/admin.php:414
 #, php-format
 msgid "Edit &#8220;%s&#8221;"
 msgstr ""
 
-#: includes/admin.php:354
+#: includes/admin.php:480
 msgid "Cause Description"
 msgstr ""
 
-#: includes/admin.php:361
+#: includes/admin.php:484
+msgid "Default Goal"
+msgstr ""
+
+#: includes/admin.php:491
 msgid "Cause Image"
 msgstr ""
 
-#: includes/admin.php:384
+#: includes/admin.php:514
 msgid "Define your fields for personal fundraisers"
 msgstr ""
 
-#: includes/admin.php:406
-#: includes/user.php:722
-#: includes/user.php:779
+#: includes/admin.php:536
+#: includes/user.php:734
+#: includes/user.php:792
 #, php-format
 msgid "Dear %s,"
 msgstr ""
 
-#: includes/admin.php:407
+#: includes/admin.php:537
 #, php-format
 msgid "Your campaign, %s has been approved."
 msgstr ""
 
-#: includes/admin.php:408
-#: includes/user.php:740
-#: includes/user.php:784
+#: includes/admin.php:538
+#: includes/user.php:753
+#: includes/user.php:797
 #, php-format
 msgid "You can view your campaign at: %s."
 msgstr ""
 
-#: includes/admin.php:409
+#: includes/admin.php:539
 msgid "Your campaign has been approved"
 msgstr ""
 
-#: includes/admin.php:419
+#: includes/admin.php:588
 msgid "MailChimp settings for personal fundraiser"
 msgstr ""
 
-#: includes/admin.php:429
+#: includes/admin.php:598
 msgid "General settings for personal fundraiser"
 msgstr ""
 
-#: includes/admin.php:494
+#: includes/admin.php:663
 msgid "PayPal settings for personal fundraiser"
 msgstr ""
 
-#: includes/admin.php:501
+#: includes/admin.php:670
 msgid "Settings to determine who can create or submit campaigns"
 msgstr ""
 
-#: includes/admin.php:512
+#: includes/admin.php:681
 msgid "Settings"
 msgstr ""
 
-#: includes/admin.php:574
-msgid "Label"
-msgstr ""
-
-#: includes/admin.php:575
-msgid "Description"
-msgstr ""
-
-#: includes/admin.php:576
-msgid "Type"
-msgstr ""
-
-#: includes/admin.php:577
-msgid "Data"
-msgstr ""
-
-#: includes/admin.php:578
-msgid "Required"
-msgstr ""
-
-#: includes/admin.php:579
-msgid "Shortcode"
-msgstr ""
-
-#: includes/admin.php:580
-msgid "Actions"
-msgstr ""
-
-#: includes/admin.php:598
-msgid "Add New Field"
-msgstr ""
-
-#: includes/admin.php:613
-msgid "Date Selector"
-msgstr ""
-
-#: includes/admin.php:614
-msgid "Large Text Input (textarea)"
-msgstr ""
-
-#: includes/admin.php:615
-msgid "Image"
-msgstr ""
-
-#: includes/admin.php:616
-msgid "Select Dropdown"
-msgstr ""
-
-#: includes/admin.php:617
-msgid "Text Input"
-msgstr ""
-
-#: includes/admin.php:618
-msgid "Fixed Input"
-msgstr ""
-
-#: includes/admin.php:619
-msgid "User Email"
-msgstr ""
-
-#: includes/admin.php:620
-msgid "User Display Name"
-msgstr ""
-
-#: includes/admin.php:637
-msgid "Campaign URL slug"
-msgstr ""
-
-#: includes/admin.php:642
-msgid "Campaign Title"
-msgstr ""
-
-#: includes/admin.php:647
-#: includes/setup.php:52
-#: includes/setup.php:116
-msgid "End Date"
-msgstr ""
-
-#: includes/admin.php:652
-msgid "User Goal"
-msgstr ""
-
-#: includes/admin.php:657
-#: includes/setup.php:63
-msgid "Total Raised"
-msgstr ""
-
-#: includes/admin.php:694
-#: includes/user.php:465
-msgid "Edit"
+#: includes/admin.php:697
+#, php-format
+msgid "Cause updated. <a href=\"%s\">View cause</a>"
 msgstr ""
 
 #: includes/admin.php:698
+msgid "Cause updated."
+msgstr ""
+
+#: includes/admin.php:699
+#, php-format
+msgid "Cause published. <a href=\"%s\">View cause</a>"
+msgstr ""
+
+#: includes/admin.php:700
+#, php-format
+msgid "Cause draft updated. <a target=\"_blank\" href=\"%s\">Preview cause</a>"
+msgstr ""
+
+#: includes/admin.php:703
+#, php-format
+msgid "Campaign updated. <a href=\"%s\">View campaign</a>"
+msgstr ""
+
+#: includes/admin.php:704
+msgid "Campaign updated."
+msgstr ""
+
+#: includes/admin.php:705
+#, php-format
+msgid "Campaign published. <a href=\"%s\">View campaign</a>"
+msgstr ""
+
+#: includes/admin.php:706
+#, php-format
+msgid "Campaign draft updated. <a target=\"_blank\" href=\"%s\">Preview campaign</a>"
+msgstr ""
+
+#: includes/admin.php:707
+msgid "Donation added."
+msgstr ""
+
+#: includes/admin.php:772
+msgid "No donations yet."
+msgstr ""
+
+#: includes/admin.php:788
+msgid "Show donations"
+msgstr ""
+
+#: includes/admin.php:789
+msgid "Download CSV"
+msgstr ""
+
+#: includes/admin.php:793
+msgid "Show more donations"
+msgstr ""
+
+#: includes/admin.php:794
+msgid "No more donations found."
+msgstr ""
+
+#: includes/admin.php:835
+msgid "Label"
+msgstr ""
+
+#: includes/admin.php:836
+msgid "Description"
+msgstr ""
+
+#: includes/admin.php:837
+msgid "Type"
+msgstr ""
+
+#: includes/admin.php:838
+msgid "Data"
+msgstr ""
+
+#: includes/admin.php:839
+msgid "Required"
+msgstr ""
+
+#: includes/admin.php:840
+msgid "Shortcode"
+msgstr ""
+
+#: includes/admin.php:841
+msgid "Actions"
+msgstr ""
+
+#: includes/admin.php:859
+msgid "Add New Field"
+msgstr ""
+
+#: includes/admin.php:874
+msgid "Date Selector"
+msgstr ""
+
+#: includes/admin.php:875
+msgid "Large Text Input (textarea)"
+msgstr ""
+
+#: includes/admin.php:876
+msgid "Image"
+msgstr ""
+
+#: includes/admin.php:877
+msgid "Select Dropdown"
+msgstr ""
+
+#: includes/admin.php:878
+msgid "Text Input"
+msgstr ""
+
+#: includes/admin.php:879
+msgid "Fixed Input"
+msgstr ""
+
+#: includes/admin.php:880
+msgid "User Email"
+msgstr ""
+
+#: includes/admin.php:881
+msgid "User Display Name"
+msgstr ""
+
+#: includes/admin.php:899
+msgid "Campaign URL slug"
+msgstr ""
+
+#: includes/admin.php:902
+msgid "Campaign Title"
+msgstr ""
+
+#: includes/admin.php:905
+#: includes/setup.php:52
+#: includes/setup.php:123
+msgid "End Date"
+msgstr ""
+
+#: includes/admin.php:908
+msgid "User Goal"
+msgstr ""
+
+#: includes/admin.php:911
+#: includes/setup.php:64
+msgid "Total Raised"
+msgstr ""
+
+#: includes/admin.php:914
+#: includes/setup.php:70
+#: includes/setup.php:132
+msgid "Giver Tally"
+msgstr ""
+
+#: includes/admin.php:952
+#: includes/user.php:494
+msgid "Edit"
+msgstr ""
+
+#: includes/admin.php:956
 msgid "Update"
 msgstr ""
 
-#: includes/admin.php:710
+#: includes/admin.php:968
 msgid "Yes"
 msgstr ""
 
@@ -312,315 +406,336 @@ msgid "The URL for your campaign"
 msgstr ""
 
 #: includes/setup.php:53
-#: includes/setup.php:117
+#: includes/setup.php:124
 msgid "The date your campaign ends"
 msgstr ""
 
-#: includes/setup.php:58
+#: includes/setup.php:59
 msgid "The amount you hope to raise"
 msgstr ""
 
-#: includes/setup.php:64
+#: includes/setup.php:65
 msgid "Total donations received"
 msgstr ""
 
-#: includes/setup.php:79
+#: includes/setup.php:71
+#: includes/setup.php:133
+msgid "The number of unique givers for the campaign."
+msgstr ""
+
+#: includes/setup.php:86
 msgid "Causes Listing"
 msgstr ""
 
-#: includes/setup.php:94
+#: includes/setup.php:101
 msgid "Campaign Listing"
 msgstr ""
 
-#: includes/setup.php:266
+#: includes/setup.php:299
 msgid "funding goal"
 msgstr ""
 
-#: includes/setup.php:267
+#: includes/setup.php:300
 msgid "raised"
 msgstr ""
 
-#: includes/setup.php:268
+#: includes/setup.php:301
 msgid "givers"
 msgstr ""
 
-#: includes/setup.php:269
+#: includes/setup.php:302
 msgid "days left"
 msgstr ""
 
-#: includes/setup.php:272
+#: includes/setup.php:305
 msgid "I have an event on [pfund-end-date] that I am involved with for my cause."
 msgstr ""
 
-#: includes/setup.php:273
+#: includes/setup.php:306
 msgid "I am hoping to raise $[pfund-gift-goal] for my cause."
 msgstr ""
 
-#: includes/setup.php:274
+#: includes/setup.php:307
 msgid "So far I have raised $[pfund-gift-tally].  If you would like to contribute to my cause, click on the donate button below:"
 msgstr ""
 
-#: includes/setup.php:281
+#: includes/setup.php:314
 msgid "Help Raise Money For My Cause"
 msgstr ""
 
-#: includes/setup.php:309
-#: includes/setup.php:311
+#: includes/setup.php:342
+#: includes/setup.php:344
 msgid "Causes"
 msgstr ""
 
-#: includes/setup.php:313
-#: includes/setup.php:314
+#: includes/setup.php:346
+#: includes/setup.php:347
 msgid "Add New Cause"
 msgstr ""
 
-#: includes/setup.php:315
+#: includes/setup.php:348
 msgid "Edit Cause"
 msgstr ""
 
-#: includes/setup.php:316
+#: includes/setup.php:349
 msgid "View Cause"
 msgstr ""
 
-#: includes/setup.php:317
+#: includes/setup.php:350
 msgid "Search Causes"
 msgstr ""
 
-#: includes/setup.php:318
+#: includes/setup.php:351
 msgid "No Causes Found"
 msgstr ""
 
-#: includes/setup.php:319
+#: includes/setup.php:352
 msgid "No Causes Found In Trash"
 msgstr ""
 
-#: includes/setup.php:333
-#: includes/setup.php:335
+#: includes/setup.php:366
+#: includes/setup.php:368
 msgid "Campaigns"
 msgstr ""
 
-#: includes/setup.php:336
+#: includes/setup.php:369
 msgid "Campaign"
 msgstr ""
 
-#: includes/setup.php:337
-#: includes/setup.php:338
+#: includes/setup.php:370
+#: includes/setup.php:371
 msgid "Add New Campaign"
 msgstr ""
 
-#: includes/setup.php:339
+#: includes/setup.php:372
 msgid "Edit Campaign"
 msgstr ""
 
-#: includes/setup.php:340
+#: includes/setup.php:373
 msgid "View Campaign"
 msgstr ""
 
-#: includes/setup.php:341
+#: includes/setup.php:374
 msgid "Search Campaigns"
 msgstr ""
 
-#: includes/setup.php:342
+#: includes/setup.php:375
 msgid "No Campaigns Found"
 msgstr ""
 
-#: includes/setup.php:343
+#: includes/setup.php:376
 msgid "No Campaigns Found In Trash"
 msgstr ""
 
-#: includes/user.php:68
+#: includes/user.php:81
 #, php-format
 msgid "An anonymous gift of %s%d was received."
 msgstr ""
 
-#: includes/user.php:80
+#: includes/user.php:93
 #, php-format
 msgid "%s %s donated %s%d."
 msgstr ""
 
-#: includes/user.php:189
+#: includes/user.php:205
 msgid "Create My Page"
 msgstr ""
 
-#: includes/user.php:231
+#: includes/user.php:247
 msgid "Post a Comment"
 msgstr ""
 
-#: includes/user.php:237
+#: includes/user.php:253
 #, php-format
 msgid "You must be <a href=\"%s\">logged in</a> to post a comment."
 msgstr ""
 
-#: includes/user.php:245
+#: includes/user.php:261
 msgid "Name"
 msgstr ""
 
-#: includes/user.php:247
+#: includes/user.php:263
 msgid "Mail (will not be published)"
 msgstr ""
 
-#: includes/user.php:309
+#: includes/user.php:326
 msgid "Cancel"
 msgstr ""
 
-#: includes/user.php:310
+#: includes/user.php:327
+msgid "Continue Editing"
+msgstr ""
+
+#: includes/user.php:328
 msgid "This email address is already registered"
 msgstr ""
 
-#: includes/user.php:311
+#: includes/user.php:329
 msgid "Invalid email address"
 msgstr ""
 
-#: includes/user.php:312
-#: includes/user.php:1248
+#: includes/user.php:330
+msgid "Login"
+msgstr ""
+
+#: includes/user.php:331
+#: includes/user.php:1272
 msgid "Mask password"
 msgstr ""
 
-#: includes/user.php:313
+#: includes/user.php:332
 msgid "Ok"
 msgstr ""
 
-#: includes/user.php:314
+#: includes/user.php:333
 msgid "Register"
 msgstr ""
 
-#: includes/user.php:315
+#: includes/user.php:334
 #, php-format
 msgid "<strong>ERROR</strong>: Couldn&#8217;t register you.  Please contact <a href=\"mailto:%s\">us</a>."
 msgstr ""
 
-#: includes/user.php:316
+#: includes/user.php:335
 msgid "Please wait while your registration is processed."
 msgstr ""
 
-#: includes/user.php:317
+#: includes/user.php:336
 msgid "Your campaign has not been saved.  If you would like to save your campaign, stay on this page, click on the Edit button and then click on the Ok button."
 msgstr ""
 
-#: includes/user.php:318
+#: includes/user.php:337
 msgid "Unmask password"
 msgstr ""
 
-#: includes/user.php:319
+#: includes/user.php:338
 msgid "This username is already registered"
 msgstr ""
 
-#: includes/user.php:377
+#: includes/user.php:404
 msgid "Anonymous gift"
 msgstr ""
 
-#: includes/user.php:457
+#: includes/user.php:486
 msgid "Please wait while we validate this location"
 msgstr ""
 
-#: includes/user.php:458
+#: includes/user.php:487
 msgid "* This location is already taken"
 msgstr ""
 
-#: includes/user.php:671
-msgid "met"
+#: includes/user.php:682
+msgid "Goal:"
 msgstr ""
 
-#: includes/user.php:675
-msgid "needed"
-msgstr ""
-
-#: includes/user.php:724
+#: includes/user.php:737
 #, php-format
 msgid "An anonymous gift of %s%d has been received for your campaign, %s."
 msgstr ""
 
-#: includes/user.php:729
+#: includes/user.php:742
 #, php-format
 msgid "%s %s donated %s%d to your campaign, %s."
 msgstr ""
 
-#: includes/user.php:735
+#: includes/user.php:748
 #, php-format
 msgid "If you would like to thank %s, you can email %s at %s."
 msgstr ""
 
-#: includes/user.php:741
-msgid "A donation has been received "
+#: includes/user.php:754
+msgid "A donation has been received"
 msgstr ""
 
-#: includes/user.php:781
+#: includes/user.php:794
 #, php-format
 msgid "Congratulations!  Your campaign goal of %s has been met!"
 msgstr ""
 
-#: includes/user.php:785
+#: includes/user.php:798
 msgid "Campaign goal met!"
 msgstr ""
 
-#: includes/user.php:838
+#: includes/user.php:856
 msgid "Campaign List"
 msgstr ""
 
-#: includes/user.php:851
+#: includes/user.php:869
 msgid "Cause List"
 msgstr ""
 
-#: includes/user.php:946
+#: includes/user.php:964
 msgid "Thank you for your donation!"
 msgstr ""
 
-#: includes/user.php:1196
+#: includes/user.php:1220
 #, php-format
 msgid "Your campaign has been created and is now available for public viewing at <a href=\"%s\">%s</a>."
 msgstr ""
 
-#: includes/user.php:1198
+#: includes/user.php:1222
 msgid "Your campaign has been created and submitted for approval.  Once your campaign has been approved you will receive an email notifying you."
 msgstr ""
 
-#: includes/user.php:1200
+#: includes/user.php:1224
 #, php-format
 msgid "Your campaign has been created. %s"
 msgstr ""
 
-#: includes/user.php:1210
+#: includes/user.php:1234
 #, php-format
 msgid "Your campaign has been updated and is available for public viewing at <a href=\"%s\">%s</a>."
 msgstr ""
 
-#: includes/user.php:1212
+#: includes/user.php:1236
 #, php-format
 msgid "Your campaign has been updated and submitted for approval.  Once your campaign has been approved you will receive an email notifying you.  Until then you can access your campaign at: <a href=\"%s\">%s</a>"
 msgstr ""
 
-#: includes/user.php:1214
+#: includes/user.php:1238
 #, php-format
 msgid "Your campaign has been updated.  %s"
 msgstr ""
 
-#: includes/user.php:1239
+#: includes/user.php:1263
 #, php-format
-msgid "To make this campaign available for others to view, please <a href=\"%s\">Login</a> or <a id=\"pfund-register-link\" href=\"#\">Register</a>."
+msgid "To make this campaign available for others to view, please <a id=\"pfund-login-link\" href=\"%s\">Login</a> or <a id=\"pfund-register-link\" href=\"#\">Register</a>."
 msgstr ""
 
-#: includes/user.php:1245
+#: includes/user.php:1269
 msgid "Username"
 msgstr ""
 
-#: includes/user.php:1250
+#: includes/user.php:1274
 msgid "Password"
 msgstr ""
 
-#: includes/user.php:1256
+#: includes/user.php:1280
 msgid "Email"
 msgstr ""
 
-#: includes/user.php:1261
+#: includes/user.php:1285
 msgid "First Name"
 msgstr ""
 
-#: includes/user.php:1266
+#: includes/user.php:1290
 msgid "Last Name"
 msgstr ""
 
-#: includes/user.php:1279
+#: includes/user.php:1303
 #, php-format
-msgid "To make this campaign available for others to view, please <a href=\"%s\">Login</a>."
+msgid "To make this campaign available for others to view, please <a id=\"pfund-login-link\" href=\"%s\">Login</a>."
+msgstr ""
+
+#: includes/class-pfund-donor-list-table.php:37
+msgid "Donor Information"
+msgstr ""
+
+#: includes/class-pfund-donor-list-table.php:38
+msgid "Comment"
+msgstr ""
+
+#: includes/class-pfund-donor-list-table.php:39
+msgid "Amount"
 msgstr ""
 

@@ -16,12 +16,65 @@
 */
 
 /**
+ * Adds a meta box to the campaign edit screen so that admins can manually add outside donations.
+ */
+function pfund_add_donation_box() {
+    global $post;
+    if ( isset( $post ) && $post->post_status == 'publish' ) {
+?>
+        <ul>
+            <li>
+                <label for="pfund-donor-first-name">Donor First Name</label>
+                <input id="pfund-donor-first-name" name="pfund-donor-first-name" type="text" />
+            </li>
+            <li>
+                <label for="pfund-donor-last-name">Donor Last Name</label>
+                <input id="pfund-donor-last-name" name="pfund-donor-last-name" type="text" />
+            </li>
+            <li>
+                <label for="pfund-donor-last-name">Donor Email</label>
+                <input name="pfund-donor-email" type="text" />
+            </li>
+            <li>
+                <label for="pfund-donation-ammount">Donation Amount</label>
+                <input class="validate[required]" id="pfund-donation-amount" name="pfund-donation-amount" type="text" />
+            </li>
+            <li>
+                <label for="pfund-anonyous-donation">Anonymous</label>
+                <input id="pfund-anonyous-donation" name="pfund-anonyous-donation" type="checkbox" value="true"/>
+            </li>
+            <li>
+                <label for="pfund-donation-comment">Comment</label>
+                <textarea id="pfund-donation-comment" name="pfund-donation-comment"></textarea>
+            </li>
+            <li>
+                <input class="button-primary" id="pfund-add-donation" name="pfund-add-donation" type="submit" value="<?php esc_attr_e('Add Donation', 'pfund' ) ?>" />
+            </li>
+        </ul>
+<?php
+    } else {
+        _e('Campaign must be published before donations can be accepted.', 'pfund');
+    }
+}
+/**
  * Add the admin css to the page if applicable.
  */
 function pfund_admin_css() {
 	if ( pfund_is_pfund_post() ) {
-		wp_enqueue_style( 'pfund_admin', PFUND_URL.'css/admin.css', array(), PFUND_VERSION );
+		wp_enqueue_style( 'pfund_admin', pfund_determine_file_location('admin','css'), array(), PFUND_VERSION );
 	}
+}
+
+/**
+ * Fired by redirect_post_location so that we can notify the admin that the
+ * donation they manually added was processed.
+ * @param string $location the redirect location to navigate to.
+ * @return string the redirect location to navigate to with a parameter
+ * specifying that a donation was processed.
+ */
+function pfund_admin_donation_added( $location ) {
+	$location = add_query_arg( 'message', 1001, $location );
+	return $location;
 }
 
 /**
@@ -43,6 +96,18 @@ function pfund_admin_init() {
 		)
 	);
 	add_settings_field(
+		'pfund_campaign_listing',
+		__( 'Use Campaign Listing Page', 'pfund' ),
+		'pfund_option_text_field',
+		'pfund',
+		'pfund_main_options',
+		array(
+			'name' => 'campaign_listing',
+			'type' => 'checkbox',
+			'value' => $options['campaign_listing']
+		)
+	);
+	add_settings_field(
 		'pfund_cause_slug',
 		__( 'Cause Slug', 'pfund' ),
 		'pfund_option_text_field',
@@ -53,6 +118,19 @@ function pfund_admin_init() {
 			'value' => $options['cause_slug']
 		)
 	);
+	add_settings_field(
+		'pfund_cause_listing',
+		__( 'Use Cause Listing Page', 'pfund' ),
+		'pfund_option_text_field',
+		'pfund',
+		'pfund_main_options',
+		array(
+			'name' => 'cause_listing',
+			'type' => 'checkbox',
+			'value' => $options['cause_listing']
+		)
+	);
+
 	add_settings_field(
 		'pfund_currency_symbol',
 		__( 'Currency Symbol', 'pfund' ),
@@ -246,7 +324,12 @@ function pfund_admin_init() {
  * Add admin specific javascript
  */
 function pfund_admin_js() {
-	wp_enqueue_script( 'pfund_admin',PFUND_URL.'js/admin.js', array( 'jquery','jquery-ui-sortable' ), PFUND_VERSION, true );
+	wp_enqueue_script( 'pfund_admin', pfund_determine_file_location('admin','js'),
+			array( 'jquery','jquery-ui-sortable' ), PFUND_VERSION, true );
+	wp_enqueue_script( 'jquery-validationEngine', PFUND_URL.'js/jquery.validationEngine.js', array( 'jquery'), 1.7, true );
+	wp_enqueue_script( 'jquery-validationEngine-lang', PFUND_URL.'js/jquery.validationEngine-'.get_locale().'.js', array( 'jquery'), 1.7, true );
+	wp_enqueue_style( 'jquery-validationEngine', PFUND_URL.'css/jquery.validationEngine.css', array(), 1.7 );    
+
 }
 
 /**
@@ -256,9 +339,10 @@ function pfund_admin_setup() {
 	$menu = add_menu_page( __( 'Personal Fundraiser Settings', 'pfund' ), __( 'Personal Fundraiser', 'pfund' ),
 			'manage_options', 'personal-fundraiser-settings', 'pfund_options_page');
 	add_action( 'load-'.$menu, 'pfund_admin_js' );
-	add_meta_box( 'pfund-options', __( 'Personal Fundraising fields', 'pfund' ), 'pfund_campaign_meta', 'pfund_campaign', 'normal', 'high' );
-	add_meta_box( 'pfund-options', __( 'Personal Fundraising fields', 'pfund' ), 'pfund_cause_meta', 'pfund_cause', 'normal', 'high' );
-
+	add_meta_box( 'pfund-campaign-meta', __( 'Personal Fundraising fields', 'pfund' ), 'pfund_campaign_meta', 'pfund_campaign', 'normal', 'high' );
+	add_meta_box( 'commentsdiv', __( 'Donation Listing', 'pfund' ), 'pfund_transaction_listing', 'pfund_campaign', 'normal', 'high' );
+    add_meta_box( 'pfund-add-donation-fields', __( 'Add Donation', 'pfund' ), 'pfund_add_donation_box', 'pfund_campaign', 'side');
+	add_meta_box( 'pfund-cause-meta', __( 'Personal Fundraising fields', 'pfund' ), 'pfund_cause_meta', 'pfund_cause', 'normal', 'high' );
 }
 
 /**
@@ -266,8 +350,29 @@ function pfund_admin_setup() {
  * @param mixed $post The campaign to display meta fields for.
  */
 function pfund_campaign_meta( $post ) {
+	$cause_id = get_post_meta( $post->ID, '_pfund_cause_id', true );
+	$causes = get_posts(
+		array(
+			'post_type' => 'pfund_cause',
+			'orderby' => 'title',
+			'order' => 'ASC',
+			'posts_per_page' => -1
+		)
+	);
+	$cause_select = '<select name="pfund-cause-id" id="pfund-cause-id">';
+	foreach ($causes as $cause) {
+		$cause_select .= '<option value="'.$cause->ID.'"'.selected($cause_id, $cause->ID, false).'>';
+		$cause_select .= $cause->post_title;
+		$cause_select .= '</option>';		
+	}
+	$cause_select .= '</select>';
 ?>	
 	<ul>
+		<?php echo pfund_render_field_list_item( $cause_select, array(
+			'name' => 'pfund-cause-id',
+			'label' => __( 'Cause', 'pfund' )
+			) );
+		?>
 		<?php echo pfund_render_fields( $post->ID, $post->post_title ); ?>
 	</ul>
 <?php
@@ -296,7 +401,9 @@ function pfund_campaign_posts_custom_column( $column_name, $campaign_id ) {
 		case 'cause':
 			$cause_id = get_post_meta( $campaign_id, '_pfund_cause_id', true );
 			$cause = get_post( $cause_id );
-
+            if ( ! isset( $cause ) ) {
+                return;
+            }
 			$edit_link = get_edit_post_link( $cause_id );
 			$post_type_object = get_post_type_object( $cause->post_type );
 			$can_edit_post = current_user_can( $post_type_object->cap->edit_post,  $cause_id  );
@@ -341,25 +448,48 @@ function pfund_campaign_sortable_columns( $columns ) {
 }
 
 /**
+ * Fired by the comment_row_actions action to filter the comment actions
+ * for personal fundraiser campaigns since most of the comments actions are not
+ * applicable for personal fundraiser campaigns.
+ * @param array $actions the current comment row actions.
+ * @return array the comment row actions to use.
+ */
+function pfund_comment_row_actions( $actions ) {
+    global $post;
+    if ( isset( $post ) && $post->post_type == 'pfund_campaign') {
+        $newactions = array();
+        if ( isset( $actions['edit'] ) ) {
+            $newactions['edit'] = $actions['edit'];
+        }
+        return $newactions;
+    }
+    return $actions;
+}
+
+/**
  * Display the meta fields for the specified cause.
  * @param mixed $post The cause to display meta fields for.
  */
 function pfund_cause_meta( $post ) {
-	$metavalues = get_post_custom( $post->ID );
-	$cause_description = pfund_get_value( $metavalues,
-			'_pfund_cause_description', array('') );
+	$cause_description = get_post_meta( $post->ID, '_pfund_cause_description', true);
+	$cause_default_goal = get_post_meta( $post->ID, '_pfund_cause_default_goal', true);
+
 ?>
 	<ul>
 		<li>
 			<label for="pfund-cause-description"><?php _e( 'Cause Description', 'pfund' );?></label>
-			<textarea class="pfund-textarea" id="pfund-cause-description" name="pfund-cause-description" rows="10" cols="50"><?php echo $cause_description[0];?></textarea>
+			<textarea class="pfund-textarea" id="pfund-cause-description" name="pfund-cause-description" rows="10" cols="50"><?php echo $cause_description;?></textarea>
+		</li>
+		<li>
+			<label for="pfund-cause-default-goal"><?php _e( 'Default Goal', 'pfund' );?></label>
+			<input type ="text" id="pfund-cause-default-goal" name="pfund-cause-default-goal" value="<?php echo $cause_default_goal;?>"/>
 		</li>
 <?php
-		$cause_image = pfund_get_value( $metavalues, '_pfund_cause_image', array('') );
+		$cause_image = get_post_meta( $post->ID, '_pfund_cause_image', true );
 		echo _pfund_render_image_field( array(
 			'name' => 'pfund-cause-image',
 			'label' =>__( 'Cause Image', 'pfund' ),
-			'value' => $cause_image[0]
+			'value' => $cause_image
 		) );
 ?>
 	</ul>
@@ -410,6 +540,45 @@ function pfund_handle_publish( $post_id, $post ) {
 		}
 		add_post_meta( $post_id, '_pfund_emailed_published', true );
 	}
+}
+
+/**
+ * AJAX function to get the list of donations for the current campaign.
+ */
+function pfund_get_donations_list() {
+    require_once( ABSPATH . 'wp-admin/includes/class-wp-comments-list-table.php' );
+	require_once( PFUND_DIR . '/includes/class-pfund-donor-list-table.php' );    
+	global $post_id;
+
+    check_ajax_referer( 'get-donations' );
+
+	set_current_screen( 'pfund-donations-list' );
+
+	$wp_list_table = new PFund_Donor_List_Table();
+
+	if ( !current_user_can( 'edit_post', $post_id ) ) {
+		die( '-1' );
+    }
+
+	$wp_list_table->prepare_items();
+	if ( !$wp_list_table->has_items() ) {
+		die( '1' );
+    }
+
+	$x = new WP_Ajax_Response();
+	ob_start();
+	foreach ( $wp_list_table->items as $comment ) {
+		get_comment( $comment );
+		$wp_list_table->single_row( $comment );
+	}
+	$donation_list = ob_get_contents();
+	ob_end_clean();
+
+	$x->add( array(
+		'what' => 'donations',
+		'data' => $donation_list
+	) );
+	$x->send();	
 }
 
 /**
@@ -515,6 +684,34 @@ function pfund_plugin_action_links( $links, $file ) {
 }
 
 /**
+ * Use custom updated messages for personal fundraiser causes and campaigns.
+ * Fires through the post_updated_messages filter.
+ * @param array $messages the currently defined messages.
+ * @return array the messages appropriate to the type of post.
+ */
+function pfund_post_updated_messages( $messages ) {
+	global $post;
+	if ( isset( $post ) ) {
+		switch ($post->post_type) {
+			case 'pfund_cause':
+				$messages['post'][1] = sprintf( __('Cause updated. <a href="%s">View cause</a>', 'pfund'), esc_url( get_permalink( $post->ID ) ) );
+				$messages['post'][4] = __( 'Cause updated.', 'pfund' );
+				$messages['post'][6] = sprintf( __('Cause published. <a href="%s">View cause</a>', 'pfund'), esc_url( get_permalink( $post->ID ) ) );
+				$messages['post'][10] = sprintf( __('Cause draft updated. <a target="_blank" href="%s">Preview cause</a>', 'pfund'), esc_url( add_query_arg( 'preview', 'true', get_permalink($post->ID) ) ) );
+				break;
+			case 'pfund_campaign':
+				$messages['post'][1] = sprintf( __('Campaign updated. <a href="%s">View campaign</a>', 'pfund'), esc_url( get_permalink( $post->ID ) ) );
+				$messages['post'][4] = __( 'Campaign updated.', 'pfund' );
+				$messages['post'][6] = sprintf( __('Campaign published. <a href="%s">View campaign</a>', 'pfund'), esc_url( get_permalink( $post->ID ) ) );
+				$messages['post'][10] = sprintf( __('Campaign draft updated. <a target="_blank" href="%s">Preview campaign</a>', 'pfund'), esc_url( add_query_arg( 'preview', 'true', get_permalink($post->ID) ) ) );
+				$messages['post'][1001] = __( 'Donation added.', 'pfund' );
+				break;
+		}
+	}
+	return $messages;
+}
+
+/**
  * Render an role drop down field in the personal fundraising settings.
  * @param array $config Array containing the name and current value of to use
  * to render the drop down field.
@@ -546,9 +743,73 @@ function pfund_save_meta( $post_id, $post ) {
 			_pfund_save_cause_fields( $post_id );
 			break;
 		case 'pfund_campaign':
-			pfund_save_campaign_fields( $post_id );
+			if ( isset ( $_REQUEST['pfund-add-donation'] ) ) {
+				_pfund_add_admin_donation( $post_id, $post );
+			} else {
+				if ( isset ( $_REQUEST['pfund-cause-id'] ) ) {
+					update_post_meta($post_id, '_pfund_cause_id', $_REQUEST['pfund-cause-id'] );
+				}
+				update_post_meta($post_id, '_pfund_camp-location', $post->post_name );
+				update_post_meta($post_id, '_pfund_camp-title', $post->post_title );
+				pfund_save_campaign_fields( $post_id );
+			}
 			break;
 	}		
+}
+
+/**
+ * Display the list of donations for a campaign.
+ * @param mixed $post the campaign to display the list of donations.
+ */
+function pfund_transaction_listing( $post ){
+    require_once( ABSPATH . 'wp-admin/includes/class-wp-comments-list-table.php' );
+    require_once( PFUND_DIR . '/includes/class-pfund-donor-list-table.php' );
+    global $wpdb, $post_ID;
+
+	$total = $wpdb->get_var( $wpdb->prepare( "SELECT count(1) FROM $wpdb->comments WHERE comment_post_ID = '%d' AND ( comment_approved = '0' OR comment_approved = '1')", $post_ID));
+
+	if ( 1 > $total ) {
+		echo '<p>' . __( 'No donations yet.', 'pfund' ) . '</p>';
+		return;
+    }
+
+	wp_nonce_field( 'get-donations', 'pfund_get_donations_nonce', false );
+
+	$wp_list_table = new PFund_Donor_List_Table();
+	$wp_list_table->display( true );
+
+    $csv_link = PFUND_URL.'csv-export.php';  
+    $csv_link = add_query_arg( array(
+        'p' => $post_ID,
+        'n' => wp_create_nonce ('pfund-campaign-csv'.$post_ID )
+    ), $csv_link );
+
+?>
+<p class="hide-if-no-js"><a href="#donationstatusdiv" id="pfund-show-donations" data-pfund-donation-start="0" data-pfund-donation-total="<?php echo $total;?>"><?php _e('Show donations','pfund'); ?></a> <img class="waiting" style="display:none;" src="<?php echo esc_url( admin_url( 'images/wpspin_light.gif' ) ); ?>" alt="" /></p>
+<p><a href="<?php echo $csv_link;?>"><?php _e('Download CSV', 'pfund');?></a>
+
+<?php
+    $script_vars = array(
+		'show_more_donations' => __( 'Show more donations', 'pfund' ),
+		'no_more_donations' => __( 'No more donations found.', 'pfund' ),
+    );
+    wp_localize_script( 'pfund_admin', 'pfund', $script_vars);
+}
+
+function _pfund_add_admin_donation( $post_id, $post ) {
+	$transaction_time = time();
+	$transaction_array = array(
+		'amount' => absint( $_REQUEST['pfund-donation-amount'] ),
+		'anonymous' => isset( $_REQUEST['pfund-anonyous-donation'] ),
+		'donor_email' => is_email( $_REQUEST['pfund-donor-email'] ),
+		'donor_first_name'=> strip_tags( $_REQUEST['pfund-donor-first-name'] ),
+		'donor_last_name'=>  strip_tags( $_REQUEST['pfund-donor-last-name'] ),
+		'success' => true,
+		'transaction_nonce' => wp_create_nonce( 'pfund-donate-campaign'.$post_id.$transaction_time),
+		'comment' => strip_tags( $_REQUEST['pfund-donation-comment'] )
+	);
+	do_action( 'pfund_add_gift', $transaction_array, $post );
+	add_action( 'redirect_post_location', 'pfund_admin_donation_added' );
 }
 
 /**
@@ -632,31 +893,25 @@ function _pfund_render_option_field( $field_id, $field ) {
 		</td>
 		<td>
 <?php
+		$can_delete_field = false;
 		switch( $field['type'] ) {
 			case 'camp_location':
 				_e( 'Campaign URL slug', 'pfund' );
-				$can_delete_field = false;
-				_pfund_hidden_type_field( $field_id, $field['type'] );
 				break;
 			case 'camp_title':
 				_e( 'Campaign Title', 'pfund' );
-				$can_delete_field = false;
-				_pfund_hidden_type_field( $field_id, $field['type'] );
 				break;
 			case 'end_date':
 				_e( 'End Date', 'pfund' );
-				$can_delete_field = false;
-				_pfund_hidden_type_field( $field_id, $field['type'] );
 				break;
 			case 'user_goal':
 				_e( 'User Goal', 'pfund' );
-				$can_delete_field = false;
-				_pfund_hidden_type_field( $field_id, $field['type'] );
 				break;
 			case 'gift_tally':
 				_e( 'Total Raised', 'pfund' );
-				$can_delete_field = false;
-				_pfund_hidden_type_field( $field_id, $field['type'] );
+				break;
+			case 'giver_tally':
+				_e( 'Giver Tally', 'pfund' );				
 				break;
 			default:
 				$can_delete_field = true;
@@ -671,6 +926,9 @@ function _pfund_render_option_field( $field_id, $field ) {
 ?>
 				</select>
 <?php
+		}
+		if ( ! $can_delete_field ) {
+			_pfund_hidden_type_field( $field_id, $field['type'] );
 		}
 ?>
 		</td>
@@ -701,7 +959,7 @@ function _pfund_render_option_field( $field_id, $field ) {
 		</td>
 		<td>
 <?php
-			if ( $can_delete_field || $field['type'] == 'end_date') {
+			if ( $can_delete_field || $field['type'] == 'end_date' ) {
 				$required = pfund_get_value( $field, 'required', false );
 ?>
 				<input class="pfund-required-field"  name="pfund_options[fields][<?php echo $field_id; ?>][required]" type='checkbox' value="true" <?php checked( $required, 'true' );?> />
@@ -748,6 +1006,10 @@ function _pfund_save_cause_fields( $cause_id ) {
 	if ( isset( $_REQUEST['pfund-cause-description'] ) ) {
 		update_post_meta( $cause_id, "_pfund_cause_description",
 				strip_tags( $_REQUEST['pfund-cause-description'] ) );
+	}
+	if ( isset( $_REQUEST['pfund-cause-default-goal'] ) ) {
+		update_post_meta( $cause_id, "_pfund_cause_default_goal",
+				intval( $_REQUEST['pfund-cause-default-goal'] ) );
 	}
 }
 
