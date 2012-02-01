@@ -5,10 +5,10 @@
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: Personal Fundraiser 0.7.6\n"
+"Project-Id-Version: Personal Fundraiser 0.7.7\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2011-12-20 15:04-0500\n"
-"PO-Revision-Date: 2011-12-20 15:04-0500\n"
+"POT-Creation-Date: 2012-02-01 14:44-0500\n"
+"PO-Revision-Date: 2012-02-01 14:45-0500\n"
 "Last-Translator: John Kleinschmidt <jk@cure.org>\n"
 "Language-Team: CURE International <info@cure.org>\n"
 "Language: \n"
@@ -139,7 +139,7 @@ msgstr ""
 
 #: includes/admin.php:373
 #: includes/admin.php:387
-#: includes/setup.php:345
+#: includes/setup.php:347
 msgid "Cause"
 msgstr ""
 
@@ -431,99 +431,99 @@ msgstr ""
 msgid "Campaign Listing"
 msgstr ""
 
-#: includes/setup.php:299
+#: includes/setup.php:301
 msgid "funding goal"
 msgstr ""
 
-#: includes/setup.php:300
+#: includes/setup.php:302
 msgid "raised"
 msgstr ""
 
-#: includes/setup.php:301
+#: includes/setup.php:303
 msgid "givers"
 msgstr ""
 
-#: includes/setup.php:302
+#: includes/setup.php:304
 msgid "days left"
 msgstr ""
 
-#: includes/setup.php:305
+#: includes/setup.php:307
 msgid "I have an event on [pfund-end-date] that I am involved with for my cause."
 msgstr ""
 
-#: includes/setup.php:306
+#: includes/setup.php:308
 msgid "I am hoping to raise $[pfund-gift-goal] for my cause."
 msgstr ""
 
-#: includes/setup.php:307
+#: includes/setup.php:309
 msgid "So far I have raised $[pfund-gift-tally].  If you would like to contribute to my cause, click on the donate button below:"
 msgstr ""
 
-#: includes/setup.php:314
+#: includes/setup.php:316
 msgid "Help Raise Money For My Cause"
 msgstr ""
 
-#: includes/setup.php:342
 #: includes/setup.php:344
+#: includes/setup.php:346
 msgid "Causes"
 msgstr ""
 
-#: includes/setup.php:346
-#: includes/setup.php:347
+#: includes/setup.php:348
+#: includes/setup.php:349
 msgid "Add New Cause"
 msgstr ""
 
-#: includes/setup.php:348
+#: includes/setup.php:350
 msgid "Edit Cause"
 msgstr ""
 
-#: includes/setup.php:349
+#: includes/setup.php:351
 msgid "View Cause"
 msgstr ""
 
-#: includes/setup.php:350
+#: includes/setup.php:352
 msgid "Search Causes"
 msgstr ""
 
-#: includes/setup.php:351
+#: includes/setup.php:353
 msgid "No Causes Found"
 msgstr ""
 
-#: includes/setup.php:352
+#: includes/setup.php:354
 msgid "No Causes Found In Trash"
 msgstr ""
 
-#: includes/setup.php:366
 #: includes/setup.php:368
+#: includes/setup.php:370
 msgid "Campaigns"
 msgstr ""
 
-#: includes/setup.php:369
+#: includes/setup.php:371
 msgid "Campaign"
 msgstr ""
 
-#: includes/setup.php:370
-#: includes/setup.php:371
+#: includes/setup.php:372
+#: includes/setup.php:373
 msgid "Add New Campaign"
 msgstr ""
 
-#: includes/setup.php:372
+#: includes/setup.php:374
 msgid "Edit Campaign"
 msgstr ""
 
-#: includes/setup.php:373
+#: includes/setup.php:375
 msgid "View Campaign"
 msgstr ""
 
-#: includes/setup.php:374
+#: includes/setup.php:376
 msgid "Search Campaigns"
 msgstr ""
 
-#: includes/setup.php:375
+#: includes/setup.php:377
 msgid "No Campaigns Found"
 msgstr ""
 
-#: includes/setup.php:376
+#: includes/setup.php:378
 msgid "No Campaigns Found In Trash"
 msgstr ""
 

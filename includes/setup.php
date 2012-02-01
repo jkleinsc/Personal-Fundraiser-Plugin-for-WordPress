@@ -251,7 +251,9 @@ function pfund_pre_update_options( $new_options, $old_options ) {
 		}
 	}
 
-	$new_options = array_merge( $old_options, $new_options );
+    if ( is_array( $old_options ) ) {
+        $new_options = array_merge( $old_options, $new_options );
+    }
 	return $new_options;
 }
 

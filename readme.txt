@@ -3,7 +3,7 @@ Contributors: johnkleinschmidt
 Donate link: http://cure.org/donate
 Tags: fundraising, paypal
 Requires at least: 3.1
-Tested up to: 3.3
+Tested up to: 3.3.1
 Stable tag: trunk
 
 Expand your fundraising base by getting your donors and fans involved in the fundraising process.
@@ -178,6 +178,9 @@ If you are using PayPal's developer sandbox for testing, check this checkbox; ot
 
 == Changelog ==
 
+= 0.7.7 =
+Fixed issue introduced in 0.7.6 that was not allowing the personal fundraising options to be saved.
+
 = 0.7.6 =
 
 * Support for WordPress 3.3.
@@ -243,3 +246,8 @@ options are updated.
 = 0.7 =
 
 * Initial public release
+
+== Upgrade Notice ==
+
+= 0.7.7 =
+This version fixes a critical install issue introduced in version 0.7.6.  If you are using 0.7.6, please upgrade.

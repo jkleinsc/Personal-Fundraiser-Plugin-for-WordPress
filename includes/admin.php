@@ -809,7 +809,7 @@ function _pfund_add_admin_donation( $post_id, $post ) {
 		'comment' => strip_tags( $_REQUEST['pfund-donation-comment'] )
 	);
 	do_action( 'pfund_add_gift', $transaction_array, $post );
-	add_action( 'redirect_post_location', 'pfund_admin_donation_added' );
+    add_filter( 'redirect_post_location', 'pfund_admin_donation_added' );
 }
 
 /**
