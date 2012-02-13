@@ -632,11 +632,13 @@ function pfund_handle_action( $posts ) {
  * For personal fundraising campaigns, if the user just updated a campaign
  * title, pull the new value from the request; otherwise just use the
  * saved title.
- * @param string $atitle The currently saved title.
+ * @param string $atitle The current title.
+ * @param int $post_id The post to display the title for.
  * @return string the title to display.
  */
-function pfund_handle_title( $atitle ) {
-	if ( ! pfund_is_pfund_post( ) ){
+function pfund_handle_title( $atitle, $post_id ) {
+    global $post;
+	if ( ! pfund_is_pfund_post( ) || $post_id != $post->ID ){
 		return $atitle;
 	}
 	return pfund_get_value( $_REQUEST, 'pfund-camp-title', $atitle );

@@ -178,6 +178,9 @@ If you are using PayPal's developer sandbox for testing, check this checkbox; ot
 
 == Changelog ==
 
+= 0.7.8 =
+Fixed issue of menu text temporarily changing to name of a new personal fundraising campaign when a user creates one.
+
 = 0.7.7 =
 Fixed issue introduced in 0.7.6 that was not allowing the personal fundraising options to be saved.
 

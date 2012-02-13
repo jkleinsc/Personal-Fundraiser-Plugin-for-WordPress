@@ -75,7 +75,7 @@ add_filter( 'the_posts', 'pfund_handle_action' ) ;
 
 add_filter( 'the_content', 'pfund_handle_content' );
 
-add_filter( 'the_title', 'pfund_handle_title' );
+add_filter( 'the_title', 'pfund_handle_title', 10, 2 );
 
 add_filter( 'query_vars', 'pfund_query_vars' );
 
