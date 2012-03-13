@@ -127,7 +127,7 @@ Each of the fields defined in the Personal Fundraiser Fields section of the Pers
 
 = How do I use PayPal? =
  
-Using PayPal requires a Premier or Business PayPal account.  In order to work properly with the Personal Fundaiser plugin, there are several settings that must be set on your PayPal account.  Also there two fields on the Personal Fundraising settings screen that must be set.  These values can be obtained by logging into PayPal:
+Using PayPal requires a Premier or Business PayPal account.  In order to work properly with the Personal Fundraiser plugin, there are several settings that must be set on your PayPal account.  Also there two fields on the Personal Fundraising settings screen that must be set.  These values can be obtained by logging into PayPal:
 
 **Donate Button Code**
 
@@ -170,6 +170,40 @@ Instant Payment Notification or IPN is a secondary measure to ensure that a PayP
 
 If you are using PayPal's developer sandbox for testing, check this checkbox; otherwise leave it unchecked.
 
+= How do I use Authorize.Net? =
+ 
+Using Authorize.Net first requires that you have a SSL Certificate for your site and the capability of running at least part of your site via https.
+
+In order to work properly with the Personal Fundraiser plugin, there are several settings that must be obtained from your Authorize.Net account.  These values can be obtained by logging into Authorize.Net:
+
+**API Login ID**
+
+1. Click on Account.
+1. Under Security Settings, click on API Login ID and Transaction Key.
+1. If an API Login ID value has already been generated and is visible, copy the API Login ID from the API Login ID and Transaction Key screen and paste it in the *API Login ID* field on the Personal Fundraiser settings screen.
+1. If an API Login ID value has not already been generated: do the following, type in your Secret Answer. You should have configured a Secret Question and Secret Answer during account activation.
+1. Click Submit to continue. The API Login ID and Transaction Key generated for your payment gateway account appear.  Copy these values to the corresponding values on the Personal Fundraiser settings screen.
+
+**Transaction Key**
+
+1. Click on Account.
+1. Under Security Settings, click on API Login ID and Transaction Key.
+1. Under the section titled Create New Transaction Key, type in your Secret Answer. You should have configured a Secret Question and Secret Answer during account activation.
+1. Click Submit to continue. The API Login ID and Transaction Key generated for your payment gateway account appear.  Copy these values to the corresponding values on the Personal Fundraiser settings screen.
+
+**Product/Donation name** 
+
+Specify the description that should be used for the transactions.  If this is empty, this will default to "Donation".
+
+**Use SSL**
+
+Unless you are using the Authorize.Net sandbox for testing, this checkbox should be checked.  When checked, all campaign pages will be served as secure (https) pages.
+
+**Test Mode**
+
+Check this checkbox if you are using a test Authorize.Net account; otherwise it should be unchecked.
+
+
 == Screenshots ==
 
 1. Create Personal Fundraiser Screen.
@@ -177,6 +211,14 @@ If you are using PayPal's developer sandbox for testing, check this checkbox; ot
 3. Add outside donations from admin.
 
 == Changelog ==
+
+= 0.7.9 =
+Added support for Authorize.Net thanks to the work of Justin Carboneau from Exygy.
+Fixed issue of donation listing not displaying donations from edit campaign screen.
+Fixed issue of manual donation not accepting decimal values.
+Fixed issue of bullets appearing with pfund-comments shortcode.
+Fixed issue of warning message when other plugins/themes apply the "the_title" filter without the second parameter.
+Fixed issue of user avatar incorrectly displaying user who published the campaign versus the user who created the campaign.
 
 = 0.7.8 =
 Fixed issue of menu text temporarily changing to name of a new personal fundraising campaign when a user creates one.

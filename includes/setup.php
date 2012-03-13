@@ -1,5 +1,5 @@
 <?php
-/*  Copyright 2011 John Kleinschmidt  (email : jk@cure.org)
+/*  Copyright 2012 John Kleinschmidt  (email : jk@cure.org)
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License, version 2, as
@@ -34,6 +34,8 @@ function pfund_activate() {
 				'date_format' => 'm/d/y',
 				'login_required' => true,
 				'mailchimp' => false,
+				'use_ssl' => false,
+				'authorize_net_test_mode' => false,
 				'submit_role' => array( 'administrator' ),
 				'fields' => array(
 					'camp-title' => array(
@@ -118,6 +120,17 @@ function pfund_activate() {
 			$pfund_options['paypal_sandbox'] = false;
 			$options_changed = true;
 		}
+		
+		if ( ! isset( $pfund_options['use_ssl'] ) ) {
+			$pfund_options['use_ssl'] = false;
+			$options_changed = true;
+		}
+		if ( ! isset( $pfund_options['authorize_net_test_mode'] ) ) {
+			$pfund_options['authorize_net_test_mode'] = false;
+			$options_changed = true;
+		}
+		
+		
 		if ( ! isset( $pfund_options['fields']['end-date'] ) ) {
 			$pfund_options['fields']['end-date'] = array(
 				'label' => __( 'End Date', 'pfund' ),
@@ -241,7 +254,7 @@ function pfund_pre_update_options( $new_options, $old_options ) {
 
 	$checkboxes = array( 'allow_registration', 'approval_required', 
 		'campaign_listing','cause_listing','login_required',  'mailchimp',
-		'paypal_sandbox' );
+		'paypal_sandbox', 'use_ssl', 'authorize_net_test_mode' );
 	foreach ( $checkboxes as $field_name) {
 		if ( isset( $new_options[$field_name] )
 				&& $new_options[$field_name] == 'true' ) {

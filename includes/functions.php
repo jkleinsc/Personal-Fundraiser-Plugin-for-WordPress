@@ -1,5 +1,5 @@
 <?php
-/*  Copyright 2011 CURE International  (email : info@cure.org)
+/*  Copyright 2012 CURE International  (email : info@cure.org)
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License, version 2, as
@@ -14,6 +14,31 @@
     along with this program; if not, write to the Free Software
     Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
+
+/**
+ * Ajax call to process donation using Authorize.Net 
+ */
+function pfund_auth_net_donation() {	
+    $campaign_id = $_POST['post_id'];
+    $gentime = $_POST['g'];    
+    $msg = array();
+    if ( wp_verify_nonce( $_POST['n'],  'pfund-donate-campaign'.$campaign_id.$gentime ) ) {
+        $post = get_post( $campaign_id );
+        $transaction_array = pfund_process_authorize_net();            
+        if ($transaction_array['success']) {
+            pfund_add_gift( $transaction_array, $post ); 
+            $msg['success'] = true;
+        } else {
+            $msg['success'] = false;
+            $msg['error'] = $transaction_array['error_msg'];
+        }	
+    } else {
+        $msg['success'] = false;
+        $msg['error'] =  __( 'You are not permitted to perform this action.', 'pfund' );        
+    }
+	echo json_encode($msg);
+	die();
+}
 
 /**
  * Convert the passed in date to iso8601 (YYYY-MM-DD) format.
@@ -119,6 +144,24 @@ function pfund_determine_file_location( $name, $type ) {
 	$suffix = defined('SCRIPT_DEBUG') && SCRIPT_DEBUG ? '.dev' : '';
 	return PFUND_URL."$type/$name$suffix.$type";
 }
+
+/**
+ * If the option is set to use ssl for campaigns, redirect campaign pages to 
+ * secure.
+ */
+function pfund_force_ssl_for_campaign_pages() {
+	global $post;     
+    if ( ! is_admin() && $post && $post->post_type == 'pfund_campaign' ) {
+        $options = get_option( 'pfund_options' ); 
+        if ( ! empty ( $options['use_ssl'] ) && ! is_ssl() ) {
+            $ssl_redirect = 'https://'.$_SERVER['HTTP_HOST'].$_SERVER['REQUEST_URI'];
+            $ssl_redirect = apply_filters( 'pfund_ssl_campaign_location', $ssl_redirect );
+            wp_redirect( $ssl_redirect, 301 );
+	   		exit();
+	   	}
+	}
+}
+
 /**
  * Filter to campaigns to use content from the cause they where created from.
  * @param string $content The current post content
@@ -162,6 +205,130 @@ function pfund_is_pfund_post( $post_to_check = false, $include_lists = false ) {
 	} else {
 		return false;
 	}
+}
+
+/**
+ * Process an Authorize.Net donation.
+ * @return array with the following keys:
+ *   success -- boolean indicating if transaction was successful.
+ *   amount -- Transaction amount
+ *   donor_first_name -- Donor first name
+ *   donor_last_name -- Donor last name
+ *   donor_email -- Donor email
+ *   error_code -- When an error occurs, one of the following values is returned:
+ *		no_response_returned -- A response was not received from PayPal.
+ *		auth_net_failure -- PayPal returned a failure.
+ *		wp_error -- A WP error was returned.
+ *		exception_encountered -- An unexpected exception was encountered.
+ *	 wp_error -- If the error_code is wp_error, the WP_Error object returned.
+ *	 error_msg -- Text message describing error encountered.
+ */
+function pfund_process_authorize_net() {
+	$return_array = array( 'success' => false );
+	if ( ! (int)$_POST['cc_num'] || ! (int)$_POST['cc_amount'] || ! $_POST['cc_email'] || ! $_POST['cc_first_name']
+		 || ! $_POST['cc_last_name'] || ! $_POST['cc_address'] || ! $_POST['cc_city'] || ! $_POST['cc_zip']) {
+		if ( ! (int)$_POST['cc_num']) {
+			$return_array['error_msg'] = __( 'Error: Please enter a valid Credit Card number.', 'pfund' );
+		} elseif ( ! (int)$_POST['cc_amount']) {
+			$return_array['error_msg'] = __( 'Error: Please enter a donation amount.', 'pfund' );
+		} elseif ( ! $_POST['cc_email']) {
+			$return_array['error_msg'] = __( 'Error: Please enter a valid email address.', 'pfund' );
+		} elseif ( ! $_POST['cc_first_name']) {
+			$return_array['error_msg'] = __( 'Error: Please enter your first name.', 'pfund' );
+		} elseif ( ! $_POST['cc_last_name']) {
+			$return_array['error_msg'] = __( 'Error: Please enter your last name.', 'pfund' );
+		} elseif ( ! $_POST['cc_address']) {
+			$return_array['error_msg'] = __( 'Error: Please enter your address.', 'pfund' );
+		} elseif ( ! $_POST['cc_city']) {
+			$return_array['error_msg'] = __( 'Error: Please enter your city.', 'pfund' );
+		} elseif ( ! $_POST['cc_zip']) {
+			$return_array['error_msg'] = __( 'Error: Please enter your zip code.', 'pfund' );
+		}
+		return $return_array;
+	}
+	
+	//process Authorize.Net donation
+	require('AuthnetAIM.class.php');
+	 
+	try {
+		$pfund_options = get_option('pfund_options');
+	    $email   = $_POST['cc_email'];
+	    $product = ($pfund_options['authorize_net_product_name'] !='') ? $pfund_options['authorize_net_product_name'] : 'Donation';
+	    $firstname = $_POST['cc_first_name'];
+	    $lastname  = $_POST['cc_last_name'];
+	    $address   = $_POST['cc_address'];
+	    $city      = $_POST['cc_city'];
+	    $state     = $_POST['cc_state'];
+	    $zipcode   = $_POST['cc_zip'];
+	 	    
+	    $creditcard = $_POST['cc_num'];
+	    $expiration = $_POST['cc_exp_month'] . '-' . $_POST['cc_exp_year'];
+	    $total      = $_POST['cc_amount'];
+	    $cvv        = $_POST['cc_cvv2'];
+	    $invoice    = substr(time(), 0, 6);	    
+	    
+	    
+	    $api_login = $pfund_options['authorize_net_api_login_id'];
+	    $transaction_key = $pfund_options['authorize_net_transaction_key']; 
+	 
+	    $payment = new AuthnetAIM( $api_login, $transaction_key, ( $pfund_options['authorize_net_test_mode']==1 ) ? true : false );
+
+	    $payment->setTransaction($creditcard, $expiration, $total, $cvv, $invoice);
+	    $payment->setParameter("x_duplicate_window", 180);
+	    $payment->setParameter("x_customer_ip", $_SERVER['REMOTE_ADDR']);
+	    $payment->setParameter("x_email", $email);
+	    $payment->setParameter("x_email_customer", FALSE);
+	    $payment->setParameter("x_first_name", $firstname);
+	    $payment->setParameter("x_last_name", $lastname);
+	    $payment->setParameter("x_address", $address);
+	    $payment->setParameter("x_city", $city);
+	    $payment->setParameter("x_state", $state);
+	    $payment->setParameter("x_zip", $zipcode);
+	    $payment->setParameter("x_description", $product);
+
+	    $payment->process();
+	 
+	    if ($payment->isApproved())  {
+			// if success, return array
+			$return_array['amount'] = $total;
+			$return_array['donor_email'] = $email;
+
+			if ( isset( $_POST['anonymous'] ) && $_POST['anonymous']==1) {
+				$return_array['anonymous'] = true;
+			} else {
+				$return_array['donor_first_name'] = $firstname;
+				$return_array['donor_last_name'] = $lastname;
+			}
+			$return_array['transaction_nonce'] = $_POST['n'];
+			$return_array['success'] = true;
+
+	    } else if ($payment->isDeclined()) {
+	        // Get reason for the decline from the bank. This always says,
+	        // "This credit card has been declined". Not very useful.
+	        $reason = $payment->getResponseText();	 
+	        $return_array['error_msg'] = __( 'This credit card has been declined.  Please use another form of payment.', 'pfund' );
+	    } else if ($payment->isError()) {	 
+	        // Capture a detailed error message. No need to refer to the manual
+	        // with this one as it tells you everything the manual does.
+	        $return_array['error_msg'] =  $payment->getResponseMessage();
+	 
+	        // We can tell what kind of error it is and handle it appropriately.
+	        if ($payment->isConfigError()) {
+	            // We misconfigured something on our end.
+	            //$return_array['error_msg'] .= " Please notify the webmaster of this error.";
+	        } else if ($payment->isTempError()) {
+	            // Some kind of temporary error on Authorize.Net's end. 
+	            // It should work properly "soon".
+	            $return_array['error_msg'] .= __( '  Please try your donation again.', 'pfund' );
+	        } else {
+	            // All other errors.
+	        }
+	 
+	    }
+	} catch (AuthnetAIMException $e) {
+	    $return_array['error_msg'] = sprintf( __( 'There was an error processing the transaction. Here is the error message: %s', 'pfund' ),  $e->__toString() );
+	}
+	return $return_array;
 }
 
 /**
@@ -524,7 +691,6 @@ function _pfund_attach_uploaded_image( $fieldname, $postid, $metaname ) {
 	if( isset( $_FILES[$fieldname] ) && is_uploaded_file( $_FILES[$fieldname]['tmp_name'] ) ) {
 		$data = media_handle_upload( $fieldname, $postid, array( 'post_status' => 'private' ) );
 		if( is_wp_error( $data ) ) {
-			$errors[] = $data;
 			error_log("error adding image for personal fundraising:".print_r( $data, true ) );
 		} else {
 			update_post_meta( $postid, $metaname, $data );
@@ -564,8 +730,8 @@ function pfund_format_date( $date, $format ) {
  */
 function pfund_get_contact_info( $post, $options = array() ) {
 	$metavalues = get_post_custom( $post->ID );
-	$contact_email = null;
-	$contact_name = null;
+	$contact_email = '';
+	$contact_name = '';
 	foreach( $metavalues as $metakey => $metavalue ) {
 		if ( strpos( $metakey, "_pfund_" ) === 0 ) {
 			$field_id = substr( $metakey , 7);
@@ -580,7 +746,7 @@ function pfund_get_contact_info( $post, $options = array() ) {
 							$contact_name = $metavalue[0];
 							break;
 					}
-					if ( isset( $contact_email ) && isset( $contact_name ) ) {
+					if ( ! empty( $contact_email ) && ! empty( $contact_name ) ) {
 						break;
 					}
 				}
@@ -588,8 +754,7 @@ function pfund_get_contact_info( $post, $options = array() ) {
 		}
 	}
 	$contact_data = clone get_userdata($post->post_author);
-	if ( isset( $contact_email ) && isset( $contact_name ) &&
-			$contact_data->user_email != $contact_email ) {
+	if ( $contact_data->user_email != $contact_email ) {
 		$contact_data->user_email = $contact_email;
 		$contact_data->display_name = $contact_name;
 		$contact_data->ID = -1;
@@ -722,5 +887,4 @@ function _pfund_sort_fields( $field, $compare_field ) {
 	}
 	
 }
-
 ?>

@@ -1,5 +1,5 @@
 <?php
-/*  Copyright 2011 CURE International  (email : info@cure.org)
+/*  Copyright 2012 CURE International  (email : info@cure.org)
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License, version 2, as
@@ -248,6 +248,74 @@ function pfund_admin_init() {
 		)
 	);
 
+	
+	// Authorize.Net settings
+	add_settings_section(
+		'pfund_authorize_net_options',
+		__( 'Authorize.Net Options', 'pfund' ),
+		'pfund_authorize_net_section_text',
+		'pfund'
+	);
+	add_settings_field(
+		'pfund_authorize_net_api_login_id',
+		__( 'API Login ID', 'pfund' ),
+		'pfund_option_text_field',
+		'pfund',
+		'pfund_authorize_net_options',
+		array(
+			'name' => 'authorize_net_api_login_id',
+			'value' => pfund_get_value( $options, 'authorize_net_api_login_id' )
+		)
+	);
+	add_settings_field(
+		'pfund_authorize_net_transaction_key',
+		__( 'Transaction Key', 'pfund' ),
+		'pfund_option_text_field',
+		'pfund',
+		'pfund_authorize_net_options',
+		array(
+			'name' => 'authorize_net_transaction_key',
+			'value' => pfund_get_value( $options, 'authorize_net_transaction_key' )
+		)
+	);
+	add_settings_field(
+		'authorize_net_product_name',
+		__( 'Product/Donation name (for Authorize.Net reports)', 'pfund' ),
+		'pfund_option_text_field',
+		'pfund',
+		'pfund_authorize_net_options',
+		array(
+			'name' => 'authorize_net_product_name',
+			'value' => pfund_get_value( $options, 'authorize_net_product_name' )
+		)
+	);
+	$use_ssl = pfund_get_value( $options, 'use_ssl', false ); 
+	add_settings_field(
+		'pfund_use_ssl',
+		__( 'Use SSL (Required for Authorize.Net - only turn off for testing)', 'pfund' ),
+		'pfund_option_text_field',
+		'pfund',
+		'pfund_authorize_net_options',
+		array(
+			'name' => 'use_ssl',
+			'type' => 'checkbox',
+			'value' => $use_ssl
+		)
+	);
+	$auth_net_test_mode = pfund_get_value( $options, 'authorize_net_test_mode', false ); 
+	add_settings_field(
+		'pfund_authorize_net_test_mode',
+		__( 'Test Mode (Requires Authorize.Net Test Account)', 'pfund' ),
+		'pfund_option_text_field',
+		'pfund',
+		'pfund_authorize_net_options',
+		array(
+			'name' => 'authorize_net_test_mode',
+			'type' => 'checkbox',
+			'value' => $auth_net_test_mode
+		)
+	);
+		
 	add_settings_section(
 		'pfund_mailchimp_options',
 		__( 'MailChimp Options', 'pfund' ),
@@ -325,11 +393,11 @@ function pfund_admin_init() {
  */
 function pfund_admin_js() {
 	wp_enqueue_script( 'pfund_admin', pfund_determine_file_location('admin','js'),
-			array( 'jquery','jquery-ui-sortable' ), PFUND_VERSION, true );
+			array( 'jquery'), PFUND_VERSION, true );
 	wp_enqueue_script( 'jquery-validationEngine', PFUND_URL.'js/jquery.validationEngine.js', array( 'jquery'), 1.7, true );
 	wp_enqueue_script( 'jquery-validationEngine-lang', PFUND_URL.'js/jquery.validationEngine-'.get_locale().'.js', array( 'jquery'), 1.7, true );
 	wp_enqueue_style( 'jquery-validationEngine', PFUND_URL.'css/jquery.validationEngine.css', array(), 1.7 );    
-
+    wp_dequeue_script( 'autosave' );
 }
 
 /**
@@ -521,10 +589,11 @@ function pfund_field_section_text() {
  */
 function pfund_handle_publish( $post_id, $post ) {
 	$sent_mail = get_post_meta( $post_id, '_pfund_emailed_published', true );
-	if ( apply_filters( 'pfund_mail_on_publish', true, $post, $author_data, $campaignUrl ) && empty( $sent_mail ) ) {
-		$options = get_option( 'pfund_options' );
-		$author_data = pfund_get_contact_info( $post, $options );
-		$campaignUrl = get_permalink( $post );
+    $options = get_option( 'pfund_options' );
+    $author_data = pfund_get_contact_info( $post, $options );
+	$campaignUrl = get_permalink( $post );    
+	if ( empty( $sent_mail ) && ! empty( $author_data->user_email ) && 
+            apply_filters( 'pfund_mail_on_publish', true, $post, $author_data, $campaignUrl ) ) {		
 		if ( $options['mailchimp'] ) {
 			$merge_vars = array(
 				'NAME'=>$author_data->display_name,
@@ -670,6 +739,15 @@ function pfund_permissions_section_text() {
 	echo '<p>'.__( 'Settings to determine who can create or submit campaigns', 'pfund' ).'</p>';
 }
 
+
+/**
+ * Text to display in personal fundraising settings in the Authorize.Net section.
+ */
+function pfund_authorize_net_section_text() {
+	echo '<p>'.__( 'Authorize.Net settings for personal fundraiser', 'pfund' ).'</p>';
+}
+
+
 /**
  * Add a settings link to the plugin listing
  * @param array $links Array of links for plugin listing
@@ -773,7 +851,7 @@ function pfund_transaction_listing( $post ){
 		return;
     }
 
-	wp_nonce_field( 'get-donations', 'pfund_get_donations_nonce', false );
+	wp_nonce_field( 'get-donations', 'pfund_get_donations_nonce' );
 
 	$wp_list_table = new PFund_Donor_List_Table();
 	$wp_list_table->display( true );
@@ -798,8 +876,8 @@ function pfund_transaction_listing( $post ){
 
 function _pfund_add_admin_donation( $post_id, $post ) {
 	$transaction_time = time();
-	$transaction_array = array(
-		'amount' => absint( $_REQUEST['pfund-donation-amount'] ),
+	$transaction_array = array(        
+		'amount' => floatval( $_REQUEST['pfund-donation-amount'] ),
 		'anonymous' => isset( $_REQUEST['pfund-anonyous-donation'] ),
 		'donor_email' => is_email( $_REQUEST['pfund-donor-email'] ),
 		'donor_first_name'=> strip_tags( $_REQUEST['pfund-donor-first-name'] ),

@@ -1,5 +1,5 @@
 <?php
-/*  Copyright 2011 CURE International  (email : info@cure.org)
+/*  Copyright 2012 CURE International  (email : info@cure.org)
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License, version 2, as
@@ -78,5 +78,11 @@ add_filter( 'the_content', 'pfund_handle_content' );
 add_filter( 'the_title', 'pfund_handle_title', 10, 2 );
 
 add_filter( 'query_vars', 'pfund_query_vars' );
+
+add_action( 'wp', 'pfund_force_ssl_for_campaign_pages' );
+
+add_action( 'wp_ajax_nopriv_pfund_auth_net_donation', 'pfund_auth_net_donation' );
+
+add_action( 'wp_ajax_pfund_auth_net_donation', 'pfund_auth_net_donation' );
 
 ?>

@@ -1,4 +1,4 @@
-/*  Copyright 2011 CURE International  (email : info@cure.org)
+/*  Copyright 2012 CURE International  (email : info@cure.org)
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License, version 2, as
@@ -139,8 +139,6 @@ jQuery(function($) {
 		$.post(ajaxurl, data,
 			function(r) {
 				r = wpAjax.parseAjaxResponse(r);
-                console.log("response:");
-                console.dir(r);
 				$('#commentsdiv .widefat').show();
 				$('#commentsdiv img.waiting').hide();
 

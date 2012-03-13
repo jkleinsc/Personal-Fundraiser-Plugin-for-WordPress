@@ -1,5 +1,5 @@
 <?php
-/*  Copyright 2011 CURE International  (email : info@cure.org)
+/*  Copyright 2012 CURE International  (email : info@cure.org)
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License, version 2, as
@@ -47,7 +47,7 @@ class PFund_Donor_List_Table extends WP_Post_Comments_List_Table {
 
     function column_amount( $comment ) {
         $trans_amount = get_comment_meta($comment->comment_ID, 'pfund_trans_amount',true);
-        echo $this->currency_symbol . number_format( floatval( $trans_amount ) );
+        echo $this->currency_symbol . number_format_i18n( floatval( $trans_amount ), 2 );
     }
     
 }

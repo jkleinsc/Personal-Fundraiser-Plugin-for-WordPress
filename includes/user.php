@@ -1,5 +1,5 @@
 <?php
-/*  Copyright 2011 John Kleinschmidt  (email : jk@cure.org)
+/*  Copyright 2012 John Kleinschmidt  (email : jk@cure.org)
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License, version 2, as
@@ -77,10 +77,12 @@ function pfund_add_gift( $transaction_array, $post ) {
 				$transaction_array['anonymous'] == true ) {
 			$commentdata = array(
 				'comment_post_ID' => $post->ID,
+				'comment_author' => '',
+				'comment_author_email' => '',                
 				'comment_content' => sprintf(
-					__( 'An anonymous gift of %s%d was received.', 'pfund' ),
+					__( 'An anonymous gift of %s%s was received.', 'pfund' ),
 					$options['currency_symbol'],
-					$transaction_array['amount']
+					number_format_i18n( floatval( $transaction_array['amount'] ), 2 )
 				),
 				'comment_approved' => 1
 			);
@@ -90,11 +92,11 @@ function pfund_add_gift( $transaction_array, $post ) {
 				'comment_author' => $transaction_array['donor_first_name'] . ' ' . $transaction_array['donor_last_name'],
 				'comment_author_email' => $transaction_array['donor_email'],
 				'comment_content' => sprintf(
-					__( '%s %s donated %s%d.', 'pfund' ),
+					__( '%s %s donated %s%s.', 'pfund' ),
 					$transaction_array['donor_first_name'],
 					$transaction_array['donor_last_name'],
 					$options['currency_symbol'],
-					$transaction_array['amount']
+					number_format_i18n( floatval( $transaction_array['amount'] ), 2 )
 				),
 				'comment_approved' => 1
 			);
@@ -317,7 +319,7 @@ function pfund_display_template() {
 	if ( $options['allow_registration'] ) {
 		$script_reqs[] = 'jquery-form';
 	}
-	wp_enqueue_script( 'pfund-user', pfund_determine_file_location('user','js'),
+    wp_enqueue_script( 'pfund-user', pfund_determine_file_location('user','js'),
 			$script_reqs, PFUND_VERSION, true );
 	wp_enqueue_style( 'pfund-user', pfund_determine_file_location('user','css'),
 			array(), PFUND_VERSION );
@@ -330,12 +332,14 @@ function pfund_display_template() {
 		'login_btn' => __( 'Login', 'pfund' ),
 		'mask_passwd' => __( 'Mask password', 'pfund' ),
 		'ok_btn' => __( 'Ok', 'pfund' ),
+        'processing_msg' => __( 'Processing...', 'pfund' ),        
 		'register_btn' => __( 'Register', 'pfund' ),
 		'register_fail' => sprintf( __( '<strong>ERROR</strong>: Couldn&#8217;t register you.  Please contact <a href="mailto:%s">us</a>.' ), $admin_email ),
 		'reg_wait_msg' => __( 'Please wait while your registration is processed.', 'pfund' ),
 		'save_warning' => __( 'Your campaign has not been saved.  If you would like to save your campaign, stay on this page, click on the Edit button and then click on the Ok button.', 'pfund' ),
+        'thank_you_msg' => __( 'Thank you for your donation!', 'pfund' ),
 		'unmask_passwd' => __( 'Unmask password', 'pfund' ),
-		'username_exists' => __( 'This username is already registered', 'pfund' )
+		'username_exists' => __( 'This username is already registered', 'pfund' )        
 	);
 	if ( ! empty( $options['date_format'] ) ) {
 		$script_vars['date_format'] = _pfund_get_jquery_date_fmt( $options['date_format'] );
@@ -350,8 +354,8 @@ function pfund_display_template() {
 	}
 	wp_localize_script( 'pfund-user', 'pfund', $script_vars);
 
-	wp_enqueue_script( 'jquery-ui-datepicker', PFUND_URL.'js/jquery.ui.datepicker.js', array( 'jquery-ui-core' ), '1.8.14', true );
-	wp_enqueue_style( 'jquery-ui-pfund', PFUND_URL.'css/smoothness/jquery.ui.pfund.css', array(), '1.8.14' );
+    wp_enqueue_script( 'jquery-ui-datepicker', PFUND_URL.'js/jquery.ui.datepicker.js', array( 'jquery-ui-core' ), '1.8.14', true );
+    wp_enqueue_style( 'jquery-ui-pfund', PFUND_URL.'css/smoothness/jquery.ui.pfund.css', array(), '1.8.14' );    
 
 	wp_enqueue_script( 'jquery-validationEngine', PFUND_URL.'js/jquery.validationEngine.js', array( 'jquery'), 1.7, true );
 	wp_enqueue_script( 'jquery-validationEngine-lang', PFUND_URL.'js/jquery.validationEngine-'.get_locale().'.js', array( 'jquery'), 1.7, true );
@@ -382,7 +386,7 @@ function pfund_donate_button() {
 	$gentime = time();
 	$returnparms = array(
 		'g' => $gentime,
-		'n' => 	wp_create_nonce( 'pfund-donate-campaign'.$post->ID.$gentime),
+		'n' => 	wp_create_nonce( 'pfund-donate-campaign'.$post->ID.$gentime ),
 		'pfund_action'=>'donate-campaign',
 		't' => 'pp'
 	);
@@ -414,6 +418,53 @@ function pfund_donate_button() {
 	}
 	$donate_btn = apply_filters( 'pfund_donate_button', $donate_btn, $page_url, $return_url );
 	return $donate_btn;
+}
+
+
+/**
+ * Shortcode handler for pfund-authorize-net-donate-form shortcode.  
+ * Displays Authorize.Net donate form
+ * @return string HTML for donate form.
+ */
+function pfund_authorize_net_donate_form() {
+	global $post;
+	$options = get_option( 'pfund_options' );
+	if ( ! pfund_is_pfund_post() ) {
+		return '';
+	}	
+	
+	$api_login_id = $options['authorize_net_api_login_id'];
+	$transaction_key = $options['authorize_net_transaction_key'];
+	$donate_form = '';
+	
+	if ( ! empty( $transaction_key ) && ! empty( $api_login_id ) ) {
+        $gentime = time();
+		$donate_form = '<div class="pfund-auth-net-donate"><a href="#">Donate</a></div>';
+        $donate_form .= '<form class="pfund-auth-net-form">';
+        $donate_form .= _pfund_auth_net_input( 'cc_first_name', __( 'First Name', 'pfund' ) );
+		$donate_form .= _pfund_auth_net_input( 'cc_last_name', __( 'Last Name', 'pfund' ) );
+        $donate_form .= _pfund_auth_net_input( 'cc_address', __( 'Address', 'pfund' ) );
+        $donate_form .= _pfund_auth_net_input( 'cc_city', __( 'City', 'pfund' ) );
+		$donate_form .= _pfund_auth_net_state_options();
+        $donate_form .= _pfund_auth_net_input( 'cc_zip', __( 'Zip', 'pfund' ) );
+		$donate_form .= _pfund_auth_net_input( 'cc_email', __( 'Email', 'pfund' ) );
+        $donate_form .= _pfund_auth_net_input( 'cc_num', __( 'Credit Card Number', 'pfund' ) );
+		$donate_form .= _pfund_auth_net_month_options();
+        $donate_form .= _pfund_auth_net_year_options();
+        $donate_form .= _pfund_auth_net_input( 'cc_cvv2', __( 'Security Code', 'pfund' ) );
+		$donate_form .= _pfund_auth_net_input( 'cc_amount', __( 'Donation Amount', 'pfund' ) );
+        $donate_form .= '<div id="pfund-input-anonymous"><input id="pfund-input-anonymous-checkbox" type="checkbox" name="anonymous" value="1"> Anonymous gift</div>';
+        $donate_form .= '<input type="hidden" name="post_id" value="' . $post->ID . '">';
+        $donate_form .= '<input type="hidden" name="g" value="' . $gentime . '">';
+        $donate_form .= '<button type="submit" value="Donate" id="pfund_donate_button">'.__( 'Donate', 'pfund' ).'</button>';
+        $donate_form .= wp_nonce_field( 'pfund-donate-campaign'.$post->ID.$gentime, 'n', false, false );
+        $donate_form .= '<div class="pfund-auth-net-secure-donations"><a href="#" class="pfund-auth-net-secure-donations-link">';
+        $donate_form .= __( 'Donations are processed securely via Authorize.Net', 'pfund' ).'</a></div>';
+        $donate_form .= _pfund_auth_net_secure_donation_text();
+        $donate_form .='</form>';
+        wp_enqueue_script( 'pfund-auth-net', pfund_determine_file_location('auth.net','js'), array(), PFUND_VERSION, true );        
+	}
+	return $donate_form;
 }
 
 /**
@@ -636,7 +687,7 @@ function pfund_handle_action( $posts ) {
  * @param int $post_id The post to display the title for.
  * @return string the title to display.
  */
-function pfund_handle_title( $atitle, $post_id ) {
+function pfund_handle_title( $atitle, $post_id = 0 ) {
     global $post;
 	if ( ! pfund_is_pfund_post( ) || $post_id != $post->ID ){
 		return $atitle;
@@ -671,11 +722,11 @@ function pfund_progress_bar() {
 	} else if ( $tally < $goal ) {
 		$funding_percentage = ($tally / $goal);
 	}
-	$goal_length = number_format((240 * $funding_percentage));
+	$goal_length = intval( ( 240 * $funding_percentage ) );
 	$return_content = '<div class="pfund-progress-meter ">';
 	$return_content .= '	<p class="pfund-progress-met">';
 	$return_content .= '		<span class="pfund-amount"><sup>'.$options['currency_symbol'].'</sup>';
-	$return_content .=				number_format( floatval( $tally ) );
+	$return_content .=				number_format_i18n( floatval( $tally ) );
 	$return_content .= '		</span> '.__('Raised', 'pfund');
 	$return_content .= '	</p>';
 	$return_content .= '	<div class="pfund-progress-bar">';
@@ -683,7 +734,7 @@ function pfund_progress_bar() {
 	$return_content .= '	</div>';
 	$return_content .= '	<p class="pfund-progress-goal">'.__('Goal:', 'pfund').' ';
 	$return_content .= '		<span class="pfund-amount"><sup>'.$options['currency_symbol'].'</sup>';
-	$return_content .=				number_format( floatval( $goal ) );
+	$return_content .=				number_format_i18n( floatval( $goal ) );
 	$return_content .= '		</span>';
 	$return_content .= '	</p>';
 	$return_content .= '</div>';
@@ -710,11 +761,12 @@ function pfund_progress_bar() {
  * @param mixed $post the post object containing the campaign.
  */
 function pfund_send_donate_email( $transaction_array, $post ) {
-	if ( apply_filters ('pfund_mail_on_donate', true, $transaction_array ) ) {
-		$options = get_option( 'pfund_options' );
-		$author_data = pfund_get_contact_info( $post, $options );
+    $options = get_option( 'pfund_options' );
+    $author_data = pfund_get_contact_info( $post, $options );
+	if ( ! empty( $author_data->user_email ) && 
+            apply_filters ('pfund_mail_on_donate', true, $transaction_array, $author_data ) ) {		
 		$campaignUrl = get_permalink( $post );
-		$trans_amount = number_format( floatval( $transaction_array['amount'] ) );
+		$trans_amount = number_format_i18n( floatval( $transaction_array['amount'] ), 2 );
 		if ( $options['mailchimp'] ) {
 			$merge_vars = array(
 				'NAME' => $author_data->display_name,
@@ -736,12 +788,12 @@ function pfund_send_donate_email( $transaction_array, $post ) {
 			$pub_message = sprintf(__( 'Dear %s,', 'pfund' ), $author_data->display_name ).PHP_EOL;
 			if ( isset( $transaction_array['anonymous'] ) &&
 				$transaction_array['anonymous'] == true ) {
-				$pub_message .= sprintf(__( 'An anonymous gift of %s%d has been received for your campaign, %s.', 'pfund' ),
+				$pub_message .= sprintf(__( 'An anonymous gift of %s%s has been received for your campaign, %s.', 'pfund' ),
 						$options['currency_symbol'],
 						$trans_amount,
 						$post->post_title).PHP_EOL;
 			} else {
-				$pub_message .= sprintf(__( '%s %s donated %s%d to your campaign, %s.', 'pfund' ),
+				$pub_message .= sprintf(__( '%s %s donated %s%s to your campaign, %s.', 'pfund' ),
 						$transaction_array['donor_first_name'],
 						$transaction_array['donor_last_name'],
 						$options['currency_symbol'],
@@ -778,26 +830,27 @@ function pfund_send_donate_email( $transaction_array, $post ) {
  * @param mixed $post the post object containing the campaign.
  */
 function pfund_send_goal_reached_email( $transaction_array, $post, $goal ) {
-	if ( apply_filters ('pfund_mail_on_goal_reached', true, $transaction_array ) ) {
-		$options = get_option( 'pfund_options' );
-		$author_data = pfund_get_contact_info( $post, $options );
+    $options = get_option( 'pfund_options' );
+    $author_data = pfund_get_contact_info( $post, $options );
+	if ( ! empty( $author_data->user_email ) && 
+            apply_filters ('pfund_mail_on_goal_reached', true, $transaction_array, $author_data  ) ) {		
 		$campaignUrl = get_permalink( $post );
 		if ( $options['mailchimp'] ) {
 			$merge_vars = array(
 				'NAME' => $author_data->display_name,
 				'CAMP_TITLE' => $post->post_title,
 				'CAMP_URL' => $campaignUrl,
-				'GOAL_AMT' => $options['currency_symbol'].number_format( floatval( $goal ) )
+				'GOAL_AMT' => $options['currency_symbol'].number_format_i18n( floatval( $goal ) )
 			);
 			pfund_send_mc_email($author_data->user_email, $merge_vars, $options['mc_email_goal_id']);
 		} else {
 			$pub_message = sprintf(__( 'Dear %s,', 'pfund' ), $author_data->display_name).PHP_EOL;
 		
 			$pub_message .= sprintf(__( 'Congratulations!  Your campaign goal of %s has been met!', 'pfund' ),
-					number_format( floatval( $goal ) ),
+					number_format_i18n( floatval( $goal ) ),
 					$post->post_title ).PHP_EOL;
 			$pub_message .= sprintf(__( 'You can view your campaign at: %s.', 'pfund' ), $campaignUrl ).PHP_EOL;
-			wp_mail($author_data->user_email, __( 'Campaign goal met!', 'pfund' ) , $pub_message);
+			wp_mail( $author_data->user_email, __( 'Campaign goal met!', 'pfund' ) , $pub_message );
 		}
 	}
 }
@@ -806,6 +859,7 @@ function pfund_send_goal_reached_email( $transaction_array, $post, $goal ) {
  * Setup the short codes that personal fundraiser uses.
  */
 function pfund_setup_shortcodes() {
+	add_shortcode( 'pfund-authorize-net-donate-form', 'pfund_authorize_net_donate_form' );
 	add_shortcode( 'pfund-campaign-list', 'pfund_campaign_list' );
 	add_shortcode( 'pfund-campaign-permalink', 'pfund_campaign_permalink');
 	add_shortcode( 'pfund-cause-list', 'pfund_cause_list' );
@@ -846,6 +900,152 @@ function pfund_user_avatar( $attrs ){
 		$size = '';
 	}
 	return get_avatar( $user_email, $size );
+}
+
+/**
+ * Generate an input field for the Authorize.Net donation form.
+ * @param type $name the name/id of the field.
+ * @param type $label the label to display for the field.
+ * @return string the generated HTML.
+ */
+function _pfund_auth_net_input( $name, $label ) {
+	$retval = '<div id="pfund-input-' . $name . '">';
+    $retval .= '<label for="' . $name . '">' . $label . ':</label>';
+    $retval .= '<input type="text" name="' . $name . '" id="'. $name .'" class="validate[required]">';
+	$retval .= '</div>';
+    return $retval;
+}
+
+/**
+ * Generate the markup for the month options for the Authorize.Net donation form.
+ * @return string the generated HTML.
+ */
+function _pfund_auth_net_month_options() {
+	$retval = '<div>';
+    $retval .= '<label for="cc_exp_month">';
+    $retval .=  __( 'Expiration Month:', 'pfund' );
+    $retval .= '</label>';
+    $retval .= '<select id="cc_exp_month" name="cc_exp_month">';
+	for ( $i=1; $i<=12; $i++ ) {
+		$padded = ( $i < 10 ? '0' : '' ) . $i;
+		$retval .= '<option value="' . $padded . '">' . $padded . ' - ' . date("M", mktime(0, 0, 0, $i, 1, 2012)) . '</option>';
+    }
+    $retval .= '</select></div>';
+    return $retval;
+}
+
+/**
+ * Generate the markup the Authorize.Net security message.
+ * @return string the generated HTML.
+ */
+function _pfund_auth_net_secure_donation_text() {
+    $donation_text = '<div class="pfund-auth-net-secure-donations-text">';        
+    $donation_text .= '<p>';
+    $donation_text .= sprintf( __( 'You can donate to %s with confidence.  ', 'pfund' ), get_bloginfo('name') );
+    $donation_text .= __( 'We have partnered with <a target="_blank" href="http://www.authorize.net">Authorize.Net</a>, a leading payment gateway since 1996, to accept credit cards and electronic check payments safely and securely for our donors.', 'pfund' );
+    $donation_text .= '</p>';
+    $donation_text .= '<p>';
+    $donation_text .= __( 'The Authorize.Net Payment Gateway manages the complex routing of sensitive customer information through the electronic check and credit card processing networks.  ', 'pfund' );
+    $donation_text .= __( 'See an <a target="_blank" href="http://www.authorize.net/resources/howitworksdiagram/">online payments diagram</a> to see how it works.  ', 'pfund' );
+    $donation_text .= '</p>';
+    $donation_text .= '<p>'. __(  'The company adheres to strict industry standards for payment processing, including:', 'pfund' ) . '</p>';
+    $donation_text .= '<ul>';
+    $donation_text .= '<li>' . __( '128-bit Secure Sockets Layer (SSL) technology for secure Internet Protocol (IP) transactions.', 'pfund' ) . '</li>';
+    $donation_text .= '<li>' . __( 'Industry leading encryption hardware and software methods and security protocols to protect customer information.', 'pfund' ) . '</li>';
+    $donation_text .= '<li>' . __( 'Compliance with the Payment Card Industry Data Security Standard (PCI DSS).', 'pfund' ) . '</li>';
+    $donation_text .= '</ul>';
+    $donation_text .= '<p>' . __( 'For additional information regarding the privacy of your sensitive cardholder data, please read the <a target="_blank" href="http://www.authorize.net/company/privacy/">Authorize.Net Privacy Policy</a>.', 'pfund' ).'</p>';
+    $donation_text .= '</div>';
+    return $donation_text;
+}
+
+/**
+ * Generate the markup for the month options for the Authorize.Net donation form.
+ * @return string the generated HTML.
+ */
+function _pfund_auth_net_state_options() {
+	$states = array(
+	 'AL' => 'Alabama',
+	 'AK' => 'Alaska',
+	 'AZ' => 'Arizona',
+	 'AR' => 'Arkansas',
+	 'CA' => 'California',
+	 'CO' => 'Colorado',
+	 'CT' => 'Connecticut',
+	 'DE' => 'Delaware',
+	 'DC' => 'Dist. of Columbia',
+	 'FL' => 'Florida',
+	 'GA' => 'Georgia',
+	 'HI' => 'Hawaii',
+	 'ID' => 'Idaho',
+	 'IL' => 'Illinois',
+	 'IN' => 'Indiana',
+	 'IA' => 'Iowa',
+	 'KS' => 'Kansas',
+	 'KY' => 'Kentucky',
+	 'LA' => 'Louisiana',
+	 'ME' => 'Maine',
+	 'MD' => 'Maryland',
+	 'MA' => 'Massachusetts',
+	 'MI' => 'Michigan',
+	 'MN' => 'Minnesota',
+	 'MS' => 'Mississippi',
+	 'MO' => 'Missouri',
+	 'MT' => 'Montana',
+	 'NE' => 'Nebraska',
+	 'NV' => 'Nevada',
+	 'NH' => 'New Hampshire',
+	 'NJ' => 'New Jersey',
+	 'NM' => 'New Mexico',
+	 'NY' => 'New York',
+	 'NC' => 'North Carolina',
+	 'ND' => 'North Dakota',
+	 'OH' => 'Ohio',
+	 'OK' => 'Oklahoma',
+	 'OR' => 'Oregon',
+	 'PA' => 'Pennsylvania',
+	 'RI' => 'Rhode Island',
+	 'SC' => 'South Carolina',
+	 'SD' => 'South Dakota',
+	 'TN' => 'Tennessee',
+	 'TX' => 'Texas',
+	 'UT' => 'Utah',
+	 'VT' => 'Vermont',
+	 'VA' => 'Virginia',
+	 'WA' => 'Washington',
+	 'WV' => 'West Virginia',
+	 'WI' => 'Wisconsin',
+	 'WY' => 'Wyoming',
+	);
+		
+	$retval = '<div>';
+    $retval .= '<label for="cc_state">';
+    $retval .= __( 'State:', 'pfund' );
+    $retval .= '</label>';
+    $retval .= '<select id="cc_state" name="cc_state">';
+	foreach ( $states as $abbr => $state ) {
+		$retval .= '<option value="' . $abbr . '">' . $abbr . ' - ' . $state . '</option>';
+	}
+	$retval .= '</select></div>';	
+    return $retval;
+}
+
+/**
+ * Generate the markup for the year options for the Authorize.Net donation form.
+ * @return string the generated HTML.
+ */
+function _pfund_auth_net_year_options() {
+	$retval = '<div>';
+    $retval .= '<label for="cc_exp_year">';
+    $retval .= __( 'Expiration Year:', 'pfund' );
+    $retval .= '</label>';
+    $retval .= '<select id="cc_exp_year" name="cc_exp_year">';
+	$year = date("Y");
+	for ( $i=$year; $i<=$year + 8; $i++ ) {
+		$retval .= '<option value="' . $i . '">' . $i . '</option>';
+    }
+    $retval .= '</select></div>';
+    return $retval;
 }
 
 /**
@@ -1017,7 +1217,7 @@ function _pfund_dynamic_shortcode( $attrs, $content, $tag ) {
 			if ( empty ( $data ) ) {
 				$data = '0';
 			}
-			$return_data = number_format( floatval( $data ) );
+			$return_data = number_format_i18n( floatval( $data ) );
 			break;
 		default:
 			$return_data = apply_filters( 'pfund_'.$field['type'].'_shortcode', $data );

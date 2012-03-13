@@ -3,13 +3,13 @@
 Plugin Name: Personal Fundraiser
 Plugin URI: http://cure.org/code
 Description: Expand your fundraising base by getting your donors and fans involved in the fundraising process.
-Version: 0.7.8
+Version: 0.7.9
 Author: John Kleinschmidt
 Author URI: http://cure.org
 License: GPLv2
 */
 
-/*  Copyright 2011 CURE International  (email : info@cure.org)
+/*  Copyright 2012 CURE International  (email : info@cure.org)
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License, version 2, as
@@ -25,7 +25,7 @@ License: GPLv2
     Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
-define( 'PFUND_VERSION', '0.7.8' );
+define( 'PFUND_VERSION', '0.7.9' );
 define( 'PFUND_FOLDER', str_replace( basename( __FILE__), '', plugin_basename( __FILE__ ) ) );
 // Define the URL to the plugin folder
 
