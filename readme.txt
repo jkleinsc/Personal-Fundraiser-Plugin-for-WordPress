@@ -213,18 +213,18 @@ Check this checkbox if you are using a test Authorize.Net account; otherwise it 
 == Changelog ==
 
 = 0.7.9 =
-Added support for Authorize.Net thanks to the work of Justin Carboneau from Exygy.
-Fixed issue of donation listing not displaying donations from edit campaign screen.
-Fixed issue of manual donation not accepting decimal values.
-Fixed issue of bullets appearing with pfund-comments shortcode.
-Fixed issue of warning message when other plugins/themes apply the "the_title" filter without the second parameter.
-Fixed issue of user avatar incorrectly displaying user who published the campaign versus the user who created the campaign.
+* Added support for Authorize.Net thanks to the work of Justin Carboneau from Exygy.
+* Fixed issue of donation listing not displaying donations from edit campaign screen.
+* Fixed issue of manual donation not accepting decimal values.
+* Fixed issue of bullets appearing with pfund-comments shortcode.
+* Fixed issue of warning message when other plugins/themes apply the "the_title" filter without the second parameter.
+* Fixed issue of user avatar incorrectly displaying user who published the campaign versus the user who created the campaign.
 
 = 0.7.8 =
-Fixed issue of menu text temporarily changing to name of a new personal fundraising campaign when a user creates one.
+* Fixed issue of menu text temporarily changing to name of a new personal fundraising campaign when a user creates one.
 
 = 0.7.7 =
-Fixed issue introduced in 0.7.6 that was not allowing the personal fundraising options to be saved.
+* Fixed issue introduced in 0.7.6 that was not allowing the personal fundraising options to be saved.
 
 = 0.7.6 =
 
